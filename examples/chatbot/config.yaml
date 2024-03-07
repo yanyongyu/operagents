@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=../../operagents/config/operagents.schema.json
+
+agents:
+  Mike:
+    backend:
+      type: user
+  John:
+    backend:
+      type: openai
+      model: gpt-3.5-turbo-16k-0613
+
+opening_scene: talking
+
+scenes:
+  talking:
+    flow:
+      type: order
+    characters:
+      user:
+        agent_name: Mike
+      assistant:
+        agent_name: John
