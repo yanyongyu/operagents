@@ -7,5 +7,5 @@ class Backend(abc.ABC):
 
     # TODO: messages
     @abc.abstractmethod
-    async def generate(self) -> str:
+    async def generate(self, messages: list) -> str:
         raise NotImplementedError

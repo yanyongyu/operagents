@@ -7,5 +7,5 @@ class UserBackend(Backend):
     type_ = "user"
 
     @override
-    async def generate(self) -> str:
+    async def generate(self, messages: list) -> str:
         return input("You: ")

@@ -30,8 +30,18 @@ BackendConfig: TypeAlias = Annotated[
 ]
 
 
+class CustomTemplateConfig(BaseModel):
+    content: str
+    custom_functions: dict[str, str] = Field(default_factory=dict)
+
+
+TemplateConfig: TypeAlias = str | CustomTemplateConfig
+
+
 class AgentConfig(BaseModel):
     backend: BackendConfig
+    system_template: TemplateConfig
+    user_template: TemplateConfig
 
 
 class FunctionPropConfig(BaseModel):
@@ -54,6 +64,7 @@ PropConfig: TypeAlias = Annotated[
 
 
 class CharacterConfig(BaseModel):
+    description: str | None = None
     agent_name: str
     props: list[PropConfig] = Field(default_factory=list)
 

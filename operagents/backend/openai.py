@@ -15,10 +15,10 @@ class OpenAIBackend(Backend):
         self.model: str = model
 
     @override
-    async def generate(self) -> str:
+    async def generate(self, messages: list) -> str:
         # TODO: messages
         response = await self.client.chat.completions.create(
-            model=self.model, messages=[]
+            model=self.model, messages=messages
         )
         reply = response.choices[0].message.content
         if reply is None:

@@ -7,6 +7,7 @@ from operagents.log import logger
 from .event import TimelineEvent
 
 if TYPE_CHECKING:
+    from operagents.agent import Agent
     from operagents.opera import Opera
     from operagents.scene import Scene
     from operagents.character import Character
@@ -49,6 +50,13 @@ class Timeline:
         if self._current_character is None:
             raise RuntimeError("The timeline has not been started.")
         return self._current_character
+
+    def past_events(self, agent: "Agent") -> list[TimelineEvent]:
+        """Get the events since the last time the agent acted."""
+        for i in range(-1, -len(self.events) - 1, -1):
+            if self.events[i].character.agent_name == agent.name:
+                return self.events[i + 1 :]
+        return self.events.copy()
 
     async def begin_character(self) -> "Character":
         """Get the first character to act in the scene."""

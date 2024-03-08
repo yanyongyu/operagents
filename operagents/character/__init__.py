@@ -16,15 +16,18 @@ if TYPE_CHECKING:
 class Character:
     name: str
     """The name of the character."""
+    description: str | None
+    """The description of the character."""
     agent_name: str
     """The name of the agent that acts as the character."""
-    props: list[Prop] = field(default_factory=list, kw_only=True)
+    props: list["Prop"] = field(default_factory=list, kw_only=True)
     """The props the character has."""
 
     @classmethod
     def from_config(cls, name: str, config: CharacterConfig) -> Self:
         return cls(
             name=name,
+            description=config.description,
             agent_name=config.agent_name,
             props=[prop.from_config(prop_config) for prop_config in config.props],
         )
