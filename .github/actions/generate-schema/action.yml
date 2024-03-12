@@ -12,6 +12,6 @@ runs:
   steps:
     - name: Generate
       run: |
-        poetry run python ./scripts/generate_config_schema.py {{ inputs.output-path }}
-        echo "output-path={{ inputs.output-path }}" >> "$GITHUB_OUTPUT"
+        poetry run python ./scripts/generate_config_schema.py ${{ inputs.output-path }}
+        echo "output-path=${{ inputs.output-path }}" >> "$GITHUB_OUTPUT"
       shell: bash
