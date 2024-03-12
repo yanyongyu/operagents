@@ -24,13 +24,13 @@ jobs:
         id: generate-schema
         uses: ./.github/actions/generate-schema
         with:
-          output-path: operagents/config/operagents.schema.json
+          output-path: operagents/config/config.schema.json
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: operagents-config-schema
-          path: operagents/config/operagents.schema.json
+          path: operagents/config/config.schema.json
           retention-days: 1
           if-no-files-found: error
 

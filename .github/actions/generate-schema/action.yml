@@ -5,7 +5,7 @@ inputs:
   output-path:
     description: Output path for the generated schema
     required: false
-    default: "operagents/config/operagents.schema.json"
+    default: "operagents/config/config.schema.json"
 
 runs:
   using: "composite"
