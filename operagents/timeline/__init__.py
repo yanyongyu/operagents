@@ -1,3 +1,4 @@
+import asyncio
 import weakref
 from types import TracebackType
 from typing import TYPE_CHECKING
@@ -83,12 +84,16 @@ class Timeline:
 
     async def next_time(self) -> None:
         """Go to the next character or scene."""
+        await logger.adebug(
+            f"Current character {self.current_character.name} starts to act."
+        )
         await self.character_act()
         if await self.scene_finished():
             self._current_scene = await self.next_scene()
             self._current_character = await self.begin_character()
         else:
             self._current_character = await self.next_character()
+            await logger.adebug(f"Next character {self.current_character.name}.")
 
     async def __aenter__(self) -> "Timeline":
         self._events = []
@@ -106,7 +111,7 @@ class Timeline:
         exc_value: BaseException | None,
         traceback: TracebackType | None,
     ) -> None:
-        await logger.adebug("Timeline ends.")
+        await asyncio.shield(asyncio.create_task(logger.adebug("Timeline ends.")))
         self._events = None
         self._current_scene = None
         self._current_character = None

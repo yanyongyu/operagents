@@ -4,6 +4,7 @@ from pathlib import Path
 
 import yaml
 
+from operagents.log import logger
 from operagents.opera import Opera
 from operagents.config import OperagentsConfig
 
@@ -12,11 +13,17 @@ parser = argparse.ArgumentParser(prog="operagents", description="OperAgents CLI"
 subcommands = parser.add_subparsers()
 
 
-def handle_run(config: str):
-    opera = Opera.from_config(
-        OperagentsConfig.model_validate(yaml.safe_load(Path(config).read_text()))
-    )
-    asyncio.run(opera.run())
+async def handle_run(config: str):
+    await logger.ainfo("Loading opera config...", path=config)
+    try:
+        opera = Opera.from_config(
+            OperagentsConfig.model_validate(yaml.safe_load(Path(config).read_text()))
+        )
+    except Exception:
+        await logger.aexception("Failed to load opera config.", path=config)
+        return
+
+    await opera.run()
 
 
 run = subcommands.add_parser("run", help="Run the opera.")
@@ -28,4 +35,4 @@ def main():
     args = parser.parse_args()
     args = vars(args)
     handler = args.pop("handler")
-    handler(**args)
+    asyncio.run(handler(**args))

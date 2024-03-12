@@ -5,28 +5,36 @@ agents:
     backend:
       type: user
     system_template: ""
-    user_template: ""
-  John:
-    backend:
-      type: openai
-      model: gpt-3.5-turbo-16k-0613
-    system_template: |-
-      Your name is {{ agent.name }}.
-      Current scene is {{ timeline.current_scene.name }}.
-      {% if timeline.current_scene.description -%}
-      {{ timeline.current_scene.description }}
-      {%- endif %}
-      You are acting as {{ timeline.current_character.agent_name }}.
-      {% if timeline.current_character.description -%}
-      {{ timeline.current_character.description }}
-      {%- endif %}
-      Please continue the conversation on behalf of {{ agent.name }} based on your known information.
     user_template: |-
       {% for event in timeline.past_events(agent) -%}
       {% if event.type_ == "act" -%}
       [Scene {{ event.scene.name}}] {{ event.character.agent_name }}({{ event.character.name }}): {{ event.content }}
       {%- endif %}
       {%- endfor %}
+  John:
+    backend:
+      type: openai
+      model: gpt-3.5-turbo-16k-0613
+      temperature: 0.3
+    system_template: |-
+      Your name is {{ agent.name }}.
+      Current scene is {{ timeline.current_scene.name }}.
+      {% if timeline.current_scene.description -%}
+      {{ timeline.current_scene.description }}
+      {%- endif -%}
+      You are acting as {{ timeline.current_character.name }}.
+      {% if timeline.current_character.description -%}
+      {{ timeline.current_character.description }}
+      {%- endif -%}
+    user_template: |-
+      Here is your chat history:
+      {% for event in timeline.past_events(agent) -%}
+      {% if event.type_ == "act" -%}
+      [Scene {{ event.scene.name}}] {{ event.character.agent_name }}({{ event.character.name }}): {{ event.content }}
+      {%- endif %}
+      {%- endfor %}
+      Please continue the conversation on behalf of {{ agent.name }}({{ timeline.current_character.name }}) based on your known information and make your answer appear as natural and coherent as possible.
+      Please answer directly what you want to say and keep your reply as concise as possible.
 
 opening_scene: talking
 

@@ -9,6 +9,7 @@ class OpenaiBackendConfig(BaseModel):
 
     type_: Literal["openai"] = Field(alias="type")
     model: str
+    temperature: float | None = None
 
 
 class UserBackendConfig(BaseModel):

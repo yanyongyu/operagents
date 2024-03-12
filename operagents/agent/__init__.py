@@ -11,8 +11,8 @@ from operagents.timeline.event import TimelineEventAct
 from operagents.config import AgentConfig, TemplateConfig
 
 if TYPE_CHECKING:
-    from operagents.backend import Backend
     from operagents.timeline import Timeline
+    from operagents.backend import Backend, Message
     from operagents.timeline.event import TimelineEvent
 
 
@@ -29,7 +29,7 @@ class Agent:
     user_template: TemplateConfig = field(kw_only=True)
     """The user template to use for generating text."""
 
-    chat_history: list = field(default_factory=list, kw_only=True)
+    chat_history: list["Message"] = field(default_factory=list, kw_only=True)
     """The history of the agent self's chat messages."""
 
     def __post_init__(self):
@@ -49,13 +49,13 @@ class Agent:
 
     async def act(self, timeline: "Timeline") -> "TimelineEvent":
         """Make the agent act."""
-        system_message = await self.system_renderer.render_async(
-            agent=self, timeline=timeline
-        )
-        new_message = await self.user_renderer.render_async(
-            agent=self, timeline=timeline
-        )
-        messages = [
+        system_message = (
+            await self.system_renderer.render_async(agent=self, timeline=timeline)
+        ).strip()
+        new_message = (
+            await self.user_renderer.render_async(agent=self, timeline=timeline)
+        ).strip()
+        messages: list["Message"] = [
             {
                 "role": "system",
                 "content": system_message,
@@ -66,9 +66,11 @@ class Agent:
                 "content": new_message,
             },
         ]
-        await self.logger.adebug("Acting", messages=messages)
+        await self.logger.adebug(
+            "Acting", character=timeline.current_character, messages=messages
+        )
         response = await self.backend.generate(messages)
-        await self.logger.ainfo(response)
+        await self.logger.ainfo(response, character=timeline.current_character)
 
         self.chat_history.append(
             {
@@ -88,3 +90,6 @@ class Agent:
             scene=timeline.current_scene,
             content=response,
         )
+
+    # TODO: Implement this
+    async def observe(self, timeline: "Timeline"): ...
