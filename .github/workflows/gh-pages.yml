@@ -18,13 +18,16 @@ jobs:
       - name: Generate
         id: generate-schema
         uses: ./.github/actions/generate-schema
+        with:
+          output-path: operagents/config/operagents.schema.json
 
       - name: Upload
         uses: actions/upload-artifact@v2
         with:
           name: operagents-config-schema
-          path: ${{ steps.generate-schema.outputs.output-path }}
+          path: operagents/config/operagents.schema.json
           retention-days: 1
+          if-no-files-found: error
 
   build:
     runs-on: ubuntu-latest
