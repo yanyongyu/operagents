@@ -1,0 +1,76 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+    outputs:
+      VERSION: ${{ steps.version.outputs.VERSION }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python environment
+        uses: ./.github/actions/setup-python
+
+      - name: Get Version
+        id: version
+        run: |
+          echo "VERSION=$(poetry version -s)" >> $GITHUB_OUTPUT
+          echo "TAG_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Check Version
+        if: steps.version.outputs.VERSION != steps.version.outputs.TAG_VERSION
+        run: exit 1
+
+      - name: Generate Config Schema
+        uses: ./.github/actions/generate-schema
+
+      - name: Upload Config Schema
+        uses: actions/upload-artifact@v4
+        with:
+          name: config-schema
+          path: operagents/config/operagents.schema.json
+
+      - name: Build Package
+        run: poetry build
+
+      - name: Publish Package to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+      - name: Publish Package to GitHub Release
+        run: gh release upload --clobber ${{ steps.version.outputs.TAG_NAME }} dist/*.tar.gz dist/*.whl
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  schema:
+    runs-on: ubuntu-latest
+    needs: release
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+
+      - name: Download Config Schema
+        uses: actions/download-artifact@v4
+        with:
+          name: config-schema
+          path: /tmp/
+
+      - name: Copy Config Schema
+        run: |
+          cp /tmp/operagents.schema.json schemas/operagents-${{ needs.release.outputs.VERSION }}.schema.json
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --all
+          git diff-index --quiet HEAD || git commit -m ":rocket: add config schema for ${{ needs.release.outputs.VERSION }}"
+          git push

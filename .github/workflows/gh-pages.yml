@@ -5,10 +5,15 @@ on:
     branches:
       - master
   pull_request:
+  workflow_run:
+    workflows: ["Release"]
+    types:
+      - completed
 
 jobs:
   generate-config-schema:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -22,7 +27,7 @@ jobs:
           output-path: operagents/config/operagents.schema.json
 
       - name: Upload
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: operagents-config-schema
           path: operagents/config/operagents.schema.json
@@ -39,7 +44,7 @@ jobs:
           fetch-depth: 1
 
       - name: Download Schema
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: operagents-config-schema
           path: schemas/
