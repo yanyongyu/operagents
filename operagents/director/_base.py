@@ -13,8 +13,8 @@ class Director(abc.ABC):
     type_: ClassVar[str]
     """The type of director."""
 
-    @abc.abstractmethod
     @classmethod
+    @abc.abstractmethod
     def from_config(cls, config: DirectorConfig) -> Self:
         """Create a director from a config."""
         raise NotImplementedError
