@@ -72,15 +72,9 @@ class Timeline:
         event = await self.current_character.act(self)
         self.events.append(event)
 
-    # TODO
-    async def scene_finished(self) -> bool:
-        """Check if the current scene has finished."""
-        return False
-
-    # TODO
-    async def next_scene(self) -> "Scene":
+    async def next_scene(self) -> "Scene | None":
         """Get the next scene."""
-        return self.current_scene
+        return await self.current_scene.director.next_scene(self)
 
     async def next_time(self) -> None:
         """Go to the next character or scene."""
@@ -88,10 +82,13 @@ class Timeline:
             f"Current character {self.current_character.name} starts to act."
         )
         await self.character_act()
-        if await self.scene_finished():
-            self._current_scene = await self.next_scene()
+        if next_scene := await self.next_scene():
+            # change to next scene
+            await logger.ainfo("Next scene", scene=next_scene)
+            self._current_scene = next_scene
             self._current_character = await self.begin_character()
         else:
+            # continue current scene with next character
             self._current_character = await self.next_character()
             await logger.adebug(f"Next character {self.current_character.name}.")
 

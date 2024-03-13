@@ -88,10 +88,41 @@ FlowConfig: TypeAlias = Annotated[
 ]
 
 
+class ModelDirectorConfig(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    type_: Literal["model"] = Field(alias="type")
+    backend: BackendConfig
+    system_template: TemplateConfig
+    user_template: TemplateConfig
+    allowed_scenes: list[str] | None = None
+    finish_flag: str = "finish"
+
+
+class UserDirectorConfig(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    type_: Literal["user"] = Field(alias="type")
+
+
+class CustomDirectorConfig(BaseModel):
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
+
+    type_: Literal["custom"] = Field(alias="type")
+    path: str
+
+
+DirectorConfig: TypeAlias = Annotated[
+    ModelDirectorConfig | UserDirectorConfig | CustomDirectorConfig,
+    Field(discriminator="type_"),
+]
+
+
 class SceneConfig(BaseModel):
     description: str | None = None
     characters: dict[str, CharacterConfig]
     flow: FlowConfig
+    director: DirectorConfig
 
 
 class OperagentsConfig(BaseModel):

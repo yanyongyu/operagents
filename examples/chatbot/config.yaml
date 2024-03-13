@@ -43,6 +43,18 @@ scenes:
     description:
     flow:
       type: order
+    director:
+      type: model
+      backend:
+        type: openai
+        model: gpt-3.5-turbo-16k-0613
+        temperature: 0.3
+      system_template: |-
+        ...
+      user_template: |-
+        ...
+      allowed_scenes: []
+      finish_flag: finish
     characters:
       user:
         agent_name: Mike

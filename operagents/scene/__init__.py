@@ -2,8 +2,9 @@ from typing import TYPE_CHECKING
 from dataclasses import dataclass
 from typing_extensions import Self
 
-from operagents import flow
 from operagents.flow import Flow
+from operagents import flow, director
+from operagents.director import Director
 from operagents.config import SceneConfig
 from operagents.character import Character
 
@@ -16,11 +17,14 @@ class Scene:
     name: str
     """The name of the scene."""
     description: str | None
+    """The description of the scene."""
     characters: dict[str, Character]
     """The characters in the scene."""
 
     flow: Flow
     """The flow of the scene."""
+    director: Director
+    """The director of the scene."""
 
     @classmethod
     def from_config(cls, name: str, config: SceneConfig) -> Self:
@@ -32,6 +36,7 @@ class Scene:
                 for name, config in config.characters.items()
             },
             flow=flow.from_config(config.flow),
+            director=director.from_config(config.director),
         )
 
     async def next_character(self, timeline: "Timeline") -> Character:
