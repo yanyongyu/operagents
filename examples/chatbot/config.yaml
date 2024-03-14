@@ -11,6 +11,15 @@ agents:
       [Scene {{ event.scene.name}}] {{ event.character.agent_name }}({{ event.character.name }}): {{ event.content }}
       {%- endif %}
       {%- endfor %}
+    scene_summary_system_template: ""
+    scene_summary_user_template: |-
+      {% for event in agent.memory.get_memory_for_scene(scene) -%}
+      {% if event.type_ == "observe" %}
+      {{ event.content }}
+      {% elif event.type_ == "act" -%}
+      [Scene {{ event.scene.name}}] {{ agent.name }}({{ event.character.name }}): {{ event.content }}
+      {%- endif %}
+      {%- endfor %}
   John:
     backend:
       type: openai
@@ -35,6 +44,15 @@ agents:
       {%- endfor %}
       Please continue the conversation on behalf of {{ agent.name }}({{ timeline.current_character.name }}) based on your known information and make your answer appear as natural and coherent as possible.
       Please answer directly what you want to say and keep your reply as concise as possible.
+    scene_summary_system_template: ""
+    scene_summary_user_template: |-
+      {% for event in agent.memory.get_memory_for_scene(scene) -%}
+      {% if event.type_ == "observe" %}
+      {{ event.content }}
+      {% elif event.type_ == "act" -%}
+      [Scene {{ event.scene.name}}] {{ agent.name }}({{ event.character.name }}): {{ event.content }}
+      {%- endif %}
+      {%- endfor %}
 
 opening_scene: talking
 

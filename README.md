@@ -14,6 +14,23 @@ pdm add operagents
 uv pip install operagents
 ```
 
+## Usage
+
+### Writing a configuration file
+
+Create a `config.yaml` file with the following basic content:
+
+```yaml
+# yaml-language-server: $schema=https://operagents.yyydl.top/schemas/config.schema.json
+
+agents:
+opening_scene: ""
+scenes:
+```
+
+The first line is a comment that tells the YAML Language Server to use the schema from the specified URL. This will enable autocompletion and validation in your editor.  
+The schema is related to the version of the operagents framework you are using. The URL is in the format `https://operagents.yyydl.top/schemas/config-<version>.schema.json`, where `<version>` is the version of the framework, e.g. `0.0.1`. If no version is specified, the latest (master) version will be used.
+
 ## Examples
 
 ### Chatbot

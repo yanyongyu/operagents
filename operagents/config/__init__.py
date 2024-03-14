@@ -43,6 +43,8 @@ class AgentConfig(BaseModel):
     backend: BackendConfig
     system_template: TemplateConfig
     user_template: TemplateConfig
+    scene_summary_system_template: TemplateConfig
+    scene_summary_user_template: TemplateConfig
 
 
 class FunctionPropConfig(BaseModel):
