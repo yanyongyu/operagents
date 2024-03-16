@@ -25,7 +25,7 @@ class ModelDirector(Director):
     system_template: TemplateConfig = field(kw_only=True)
     user_template: TemplateConfig = field(kw_only=True)
     allowed_scenes: list[str] | None = field(default=None, kw_only=True)
-    finish_flag: str = field(default="finish", kw_only=True)
+    finish_flag: str | None = field(default=None, kw_only=True)
 
     def __post_init__(self):
         self.system_renderer = get_template_renderer(self.system_template)
@@ -67,7 +67,7 @@ class ModelDirector(Director):
             if self.allowed_scenes is None
             else self.allowed_scenes
         )
-        if self.finish_flag in response:
+        if self.finish_flag is not None and self.finish_flag in response:
             raise OperaFinished()
         for scene in allowed_scenes:
             if scene in response:

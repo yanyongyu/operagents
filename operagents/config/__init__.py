@@ -98,7 +98,7 @@ class ModelDirectorConfig(BaseModel):
     system_template: TemplateConfig
     user_template: TemplateConfig
     allowed_scenes: list[str] | None = None
-    finish_flag: str = "finish"
+    finish_flag: str | None = None
 
 
 class UserDirectorConfig(BaseModel):

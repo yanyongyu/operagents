@@ -35,6 +35,8 @@ agents:
       {% if timeline.current_character.description -%}
       {{ timeline.current_character.description }}
       {%- endif -%}
+      Please continue the conversation on behalf of {{ agent.name }}({{ timeline.current_character.name }}) based on your known information and make your answer appear as natural and coherent as possible.
+      Please answer directly what you want to say and keep your reply as concise as possible.
     user_template: |-
       Here is your chat history:
       {% for event in timeline.past_events(agent) -%}
@@ -42,17 +44,20 @@ agents:
       [Scene {{ event.scene.name}}] {{ event.character.agent_name }}({{ event.character.name }}): {{ event.content }}
       {%- endif %}
       {%- endfor %}
-      Please continue the conversation on behalf of {{ agent.name }}({{ timeline.current_character.name }}) based on your known information and make your answer appear as natural and coherent as possible.
-      Please answer directly what you want to say and keep your reply as concise as possible.
     scene_summary_system_template: ""
     scene_summary_user_template: |-
       {% for event in agent.memory.get_memory_for_scene(scene) -%}
-      {% if event.type_ == "observe" %}
+      {% if event.type_ == "observe" -%}
       {{ event.content }}
-      {% elif event.type_ == "act" -%}
+      {%- elif event.type_ == "act" -%}
       [Scene {{ event.scene.name}}] {{ agent.name }}({{ event.character.name }}): {{ event.content }}
       {%- endif %}
       {%- endfor %}
+      {% for event in timeline.past_events_in_scene(agent, scene) -%}
+      {% if event.type_ == "act" -%}
+      [Scene {{ event.scene.name}}] {{ event.character.agent_name }}({{ event.character.name }}): {{ event.content }}
+      {%- endif %}
+      {%- endfor %
 
 opening_scene: talking
 

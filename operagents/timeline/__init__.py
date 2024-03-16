@@ -53,11 +53,20 @@ class Timeline:
         return self._current_character
 
     def past_events(self, agent: "Agent") -> list[TimelineEvent]:
-        """Get the events since the last time the agent acted."""
-        for i in range(-1, -len(self.events) - 1, -1):
-            if self.events[i].character.agent_name == agent.name:
-                return self.events[i + 1 :]
-        return self.events.copy()
+        """Get the events since the last time the agent acted in current scene."""
+        return self.past_events_in_scene(agent, self.current_scene)
+
+    def past_events_in_scene(
+        self, agent: "Agent", scene: "Scene"
+    ) -> list[TimelineEvent]:
+        """Get the events since the last time the agent acted in the scene."""
+        scene_events = [
+            event for event in self.events if event.scene.name == scene.name
+        ]
+        for i in range(-1, -len(scene_events) - 1, -1):
+            if scene_events[i].character.agent_name == agent.name:
+                return scene_events[i + 1 :]
+        return scene_events
 
     async def begin_character(self) -> "Character":
         """Get the first character to act in the scene."""
