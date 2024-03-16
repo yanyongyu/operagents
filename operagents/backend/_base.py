@@ -2,6 +2,8 @@ import abc
 from typing import Literal, ClassVar, TypeAlias
 from typing_extensions import Required, TypedDict
 
+from operagents.prop import Prop
+
 
 class Function(TypedDict):
     name: str
@@ -57,5 +59,7 @@ class Backend(abc.ABC):
     type_: ClassVar[str]
 
     @abc.abstractmethod
-    async def generate(self, messages: list[Message]) -> str:
+    async def generate(
+        self, messages: list[Message], props: list["Prop"] | None = None
+    ) -> str:
         raise NotImplementedError

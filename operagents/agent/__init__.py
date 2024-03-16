@@ -70,9 +70,10 @@ class Agent:
             scene_summary_user_template=config.scene_summary_user_template,
         )
 
-    def _need_summary(self, timeline: "Timeline") -> bool:
-        """Check if the agent needs a scene summary."""
-        return self.memory.last_remembered_scene() != timeline.current_scene
+    async def _act_precheck(self, timeline: "Timeline") -> None:
+        """Check if the agent needs to summarize the scene before acting."""
+        if self.memory.last_remembered_scene() != timeline.current_scene:
+            await self.summary(timeline)
 
     def _memory_to_message(self, memory_event: AgentEvent) -> "Message":
         """Convert an agent memory event to a message."""
@@ -90,11 +91,46 @@ class Agent:
         # This should never happen
         raise ValueError(f"Unknown memory event type: {memory_event.type_}")
 
+    async def _do_response(
+        self, timeline: "Timeline", message: str, response: str
+    ) -> None:
+        """Make the agent respond to a message."""
+        await self.logger.ainfo(response, character=timeline.current_character)
+
+        self.memory.remember(
+            AgentEventObserve(scene=timeline.current_scene, content=message)
+        )
+        self.memory.remember(
+            AgentEventAct(
+                scene=timeline.current_scene,
+                character=timeline.current_character,
+                content=response,
+            )
+        )
+
+    async def fake_act(self, timeline: "Timeline", response: str) -> "TimelineEvent":
+        """Make the agent act with a fake response."""
+
+        await self._act_precheck(timeline)
+
+        new_message = (
+            await self.user_renderer.render_async(agent=self, timeline=timeline)
+        ).strip()
+        await self.logger.adebug(
+            "Fake acting", character=timeline.current_character, messages=new_message
+        )
+        await self._do_response(timeline, new_message, response)
+
+        return TimelineEventAct(
+            character=timeline.current_character,
+            scene=timeline.current_scene,
+            content=response,
+        )
+
     async def act(self, timeline: "Timeline") -> "TimelineEvent":
         """Make the agent act."""
 
-        if self._need_summary(timeline):
-            await self.summary(timeline)
+        await self._act_precheck(timeline)
 
         system_message = (
             await self.system_renderer.render_async(agent=self, timeline=timeline)
@@ -114,22 +150,15 @@ class Agent:
                 "content": new_message,
             },
         ]
+
+        props = timeline.current_character.props
+
         await self.logger.adebug(
             "Acting", character=timeline.current_character, messages=messages
         )
-        response = await self.backend.generate(messages)
-        await self.logger.ainfo(response, character=timeline.current_character)
+        response = await self.backend.generate(messages, props)
 
-        self.memory.remember(
-            AgentEventObserve(scene=timeline.current_scene, content=new_message)
-        )
-        self.memory.remember(
-            AgentEventAct(
-                scene=timeline.current_scene,
-                character=timeline.current_character,
-                content=response,
-            )
-        )
+        await self._do_response(timeline, new_message, response)
 
         return TimelineEventAct(
             character=timeline.current_character,
@@ -168,8 +197,3 @@ class Agent:
             self.memory.remember(
                 AgentEventSummary(scene=scene, content=summary_message)
             )
-
-    # TODO: Implement this
-    async def observe(self, query: str) -> list[AgentEvent]:
-        """Get relative memory for current query"""
-        raise NotImplementedError
