@@ -59,8 +59,8 @@ class OpenAIBackend(Backend):
             model=self.model,
             temperature=self.temperature,
             messages=messages_,
-            tools=tools,
-            tool_choice="auto",
+            tools=tools or openai.NOT_GIVEN,
+            tool_choice="auto" if tools else openai.NOT_GIVEN,
         )
         reply = response.choices[0].message
 

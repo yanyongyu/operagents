@@ -72,7 +72,9 @@ class Agent:
 
     async def _act_precheck(self, timeline: "Timeline") -> None:
         """Check if the agent needs to summarize the scene before acting."""
-        if self.memory.last_remembered_scene() != timeline.current_scene:
+        if (
+            scene := self.memory.last_remembered_scene()
+        ) and scene.name != timeline.current_scene.name:
             await self.summary(timeline)
 
     def _memory_to_message(self, memory_event: AgentEvent) -> "Message":

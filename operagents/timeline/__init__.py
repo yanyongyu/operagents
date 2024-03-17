@@ -52,6 +52,10 @@ class Timeline:
             raise RuntimeError("The timeline has not been started.")
         return self._current_character
 
+    def scene_events(self, scene: "Scene") -> list[TimelineEvent]:
+        """Get the events in the scene."""
+        return [event for event in self.events if event.scene.name == scene.name]
+
     def past_events(self, agent: "Agent") -> list[TimelineEvent]:
         """Get the events since the last time the agent acted in current scene."""
         return self.past_events_in_scene(agent, self.current_scene)

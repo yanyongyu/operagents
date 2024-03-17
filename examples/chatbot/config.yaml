@@ -41,23 +41,25 @@ agents:
       Here is your chat history:
       {% for event in timeline.past_events(agent) -%}
       {% if event.type_ == "act" -%}
-      [Scene {{ event.scene.name}}] {{ event.character.agent_name }}({{ event.character.name }}): {{ event.content }}
+      {{ event.character.agent_name }}({{ event.character.name }}): {{ event.content }}
       {%- endif %}
       {%- endfor %}
-    scene_summary_system_template: ""
+    scene_summary_system_template: |-
+      Your name is {{ agent.name }}.
+      Your task is to summarize the historical dialogue records according to the current scene, and summarize the most important information.
     scene_summary_user_template: |-
       {% for event in agent.memory.get_memory_for_scene(scene) -%}
       {% if event.type_ == "observe" -%}
       {{ event.content }}
       {%- elif event.type_ == "act" -%}
-      [Scene {{ event.scene.name}}] {{ agent.name }}({{ event.character.name }}): {{ event.content }}
+      {{ agent.name }}({{ event.character.name }}): {{ event.content }}
       {%- endif %}
       {%- endfor %}
       {% for event in timeline.past_events_in_scene(agent, scene) -%}
       {% if event.type_ == "act" -%}
-      [Scene {{ event.scene.name}}] {{ event.character.agent_name }}({{ event.character.name }}): {{ event.content }}
+      {{ event.character.agent_name }}({{ event.character.name }}): {{ event.content }}
       {%- endif %}
-      {%- endfor %
+      {%- endfor %}
 
 opening_scene: talking
 
@@ -73,9 +75,14 @@ scenes:
         model: gpt-3.5-turbo-16k-0613
         temperature: 0.3
       system_template: |-
-        ...
+        You are the director of the scene. Please observe the ongoing discussion and decide whether more communication is needed between user and AI assistant. If you think the conversation is over, please type "finish" to end the scene.
       user_template: |-
-        ...
+        Here is the chat history:
+        {% for event in timeline.scene_events(timeline.current_scene) -%}
+        {% if event.type_ == "act" -%}
+        {{ event.character.agent_name }}({{ event.character.name }}): {{ event.content }}
+        {%- endif %}
+        {%- endfor %}
       allowed_scenes: []
       finish_flag: finish
     characters:

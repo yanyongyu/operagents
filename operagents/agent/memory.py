@@ -59,9 +59,9 @@ class AgentMemory:
         self.memory: list[AgentEvent] = []
         """The memory of the agent."""
 
-    def last_remembered_scene(self) -> "Scene":
+    def last_remembered_scene(self) -> "Scene | None":
         """Get the last remembered scene."""
-        return self.memory[-1].scene
+        return self.memory[-1].scene if self.memory else None
 
     def need_summary_scenes(self) -> list["Scene"]:
         """Get the scenes that need a summary."""
