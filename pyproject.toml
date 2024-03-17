@@ -1,10 +1,11 @@
 [tool.poetry]
 name = "operagents"
-version = "0.0.3"
-description = ""
+version = "0.0.4"
+description = "Dynamic, highly customizable language agents framework"
 authors = ["yanyongyu <yyy@yyydl.top>"]
 license = "MIT"
 readme = "README.md"
+keywords = ["agent", "llm", "langchain", "sop", "langgraph"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
