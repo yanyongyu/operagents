@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 class UserFlow(Flow):
-    type: ClassVar[Literal["user"]] = "user"
+    type_: ClassVar[Literal["user"]] = "user"
 
     @classmethod
     @override

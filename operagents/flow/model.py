@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class ModelFlow(Flow):
-    type: ClassVar[Literal["model"]] = "model"
+    type_: ClassVar[Literal["model"]] = "model"
 
     backend: "Backend" = field()
 
