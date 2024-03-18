@@ -153,6 +153,31 @@ class SceneConfig(BaseModel):
                 raise ValueError("Order flow order must be subset of scene characters")
         return self
 
+    @model_validator(mode="after")
+    def check_model_flow(self) -> Self:
+        if isinstance(self.flow, ModelFlowConfig):
+            if self.flow.allowed_characters is not None and (
+                set(self.flow.allowed_characters) - set(self.characters)
+            ):
+                raise ValueError(
+                    "Model flow allowed characters must be subset of scene characters"
+                )
+            if (
+                self.flow.begin_character is not None
+                and self.flow.begin_character not in self.characters
+            ):
+                raise ValueError(
+                    "Model flow begin character must be in scene characters"
+                )
+            if (
+                self.flow.fallback_character is not None
+                and self.flow.fallback_character not in self.characters
+            ):
+                raise ValueError(
+                    "Model flow fallback character must be in scene characters"
+                )
+        return self
+
 
 class OperagentsConfig(BaseModel):
     agents: dict[str, AgentConfig]
@@ -172,6 +197,31 @@ class OperagentsConfig(BaseModel):
         if not scenes:
             raise ValueError("At least one scene must be defined")
         return scenes
+
+    @model_validator(mode="after")
+    def check_scene_directors(self) -> Self:
+        for scene_name, scene in self.scenes.items():
+            if (
+                isinstance(scene.director, ModelDirectorConfig)
+                and scene.director.allowed_scenes is not None
+            ):
+                if set(scene.director.allowed_scenes) - set(self.scenes):
+                    raise ValueError(
+                        f"Scene {scene_name} director allowed scenes "
+                        "must be subset of scenes"
+                    )
+        return self
+
+    @model_validator(mode="after")
+    def check_scene_character_agents(self) -> Self:
+        for scene_name, scene in self.scenes.items():
+            for character_name, character in scene.characters.items():
+                if character.agent_name not in self.agents:
+                    raise ValueError(
+                        f"Scene {scene_name} character {character_name} agent "
+                        f"{character.agent_name} not found in agents"
+                    )
+        return self
 
     @model_validator(mode="after")
     def check_opening_scene(self) -> Self:
