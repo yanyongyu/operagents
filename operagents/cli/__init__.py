@@ -11,7 +11,7 @@ from operagents.config import OperagentsConfig
 
 parser = argparse.ArgumentParser(prog="operagents", description="OperAgents CLI")
 
-subcommands = parser.add_subparsers()
+subcommands = parser.add_subparsers(title="Commands")
 
 
 async def handle_run(config: str, path: bool = True):
@@ -32,14 +32,16 @@ async def handle_run(config: str, path: bool = True):
     await opera.run()
 
 
-run = subcommands.add_parser("run", help="Run the opera.")
-run.add_argument(
-    "--no-path",
-    action="store_false",
-    dest="path",
-    help="Do not add current path to sys.path.",
+run = subcommands.add_parser(
+    "run", help="Run the opera.", formatter_class=argparse.ArgumentDefaultsHelpFormatter
 )
-run.add_argument("config", help="The path to the opera configuration file.")
+run.add_argument(
+    "--path",
+    default=True,
+    action=argparse.BooleanOptionalAction,
+    help="Add current path to sys.path.",
+)
+run.add_argument("config", help="The path to the operagents configuration file.")
 run.set_defaults(handler=handle_run)
 
 
