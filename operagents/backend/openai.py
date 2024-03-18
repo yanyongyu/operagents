@@ -32,26 +32,38 @@ class OpenAIBackend(Backend):
         self.model: str = model
         self.temperature: float | None = temperature
 
-    async def _use_prop(self, prop: Prop, args: str): ...
+    async def _use_prop(self, prop: Prop, args: str):
+        if prop.params is None:
+            return await prop.use(None)
+        else:
+            param = prop.params.model_validate_json(args)
+            return await prop.use(param)
+
+    def _prop_to_tool(self, prop: Prop) -> "ChatCompletionToolParam":
+        if prop.params is None:
+            return {
+                "type": "function",
+                "function": {
+                    "name": prop.name,
+                    "description": prop.description,
+                },
+            }
+        else:
+            return {
+                "type": "function",
+                "function": {
+                    "name": prop.name,
+                    "description": prop.description,
+                    "parameters": prop.params.model_json_schema(),
+                },
+            }
 
     @override
     async def generate(
         self, messages: list[Message], props: list["Prop"] | None = None
     ) -> str:
         tools: list["ChatCompletionToolParam"] = (
-            [
-                {
-                    "type": "function",
-                    "function": {
-                        "name": prop.name,
-                        "description": prop.description,
-                        "parameters": prop.params,
-                    },
-                }
-                for prop in props
-            ]
-            if props
-            else []
+            [self._prop_to_tool(prop) for prop in props] if props else []
         )
         messages_ = cast(list["ChatCompletionMessageParam"], messages)
 

@@ -1,14 +1,13 @@
 import abc
-from typing import Generic, TypeVar, ClassVar
+from typing_extensions import TypeVar
+from typing import Any, Generic, ClassVar
 
 from pydantic import BaseModel
 
 Jsonable = str | int | float | bool | list["Jsonable"] | dict[str, "Jsonable"]
 
-P = TypeVar("P", bound=BaseModel)
-R = TypeVar(
-    "R",
-)
+P = TypeVar("P", bound=BaseModel, default=BaseModel)
+R = TypeVar("R", default=Any)
 
 
 # agent use prop to call functions
@@ -28,10 +27,10 @@ class Prop(abc.ABC, Generic[P, R]):
         """A description of the prop."""
         return self.__doc__ or ""
 
-    params: type[P]
+    params: type[P] | None
     """The parameters required by the prop to call functions."""
 
     @abc.abstractmethod
-    def use(self, params: P) -> R:
+    def use(self, params: P | None) -> R:
         """Call function with the given parameters."""
         raise NotImplementedError

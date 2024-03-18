@@ -43,12 +43,12 @@ agents:
       Please continue the conversation on behalf of {{ agent.name }}({{ timeline.current_character.name }}) based on your known information and make your answer appear as natural and coherent as possible.
       Please answer directly what you want to say and keep your reply as concise as possible.
     user_template: |-
-      Here is your chat history:
       {% for event in timeline.past_events(agent) -%}
       {% if event.type_ == "act" -%}
       {{ event.character.agent_name }}({{ event.character.name }}): {{ event.content }}
       {%- endif %}
       {%- endfor %}
+      {{ agent.name }}({{ timeline.current_character.name }}):
     scene_summary_system_template: |-
       Your name is {{ agent.name }}.
       Your task is to summarize the historical dialogue records according to the current scene, and summarize the most important information.
@@ -73,6 +73,9 @@ scenes:
     description:
     flow:
       type: order
+      order:
+        - user
+        - ai assistant
     director:
       type: model
       backend:
@@ -97,3 +100,6 @@ scenes:
         description: |-
           You are a helpful assistant.
         agent_name: John
+        props:
+          - type: function
+            function: custom:current_time

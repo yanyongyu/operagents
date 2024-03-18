@@ -1,3 +1,4 @@
+import sys
 import asyncio
 import argparse
 from pathlib import Path
@@ -13,7 +14,12 @@ parser = argparse.ArgumentParser(prog="operagents", description="OperAgents CLI"
 subcommands = parser.add_subparsers()
 
 
-async def handle_run(config: str):
+async def handle_run(config: str, path: bool = True):
+    if path:
+        sys_path = str(Path.cwd().resolve())
+        if sys_path not in sys.path:
+            sys.path.insert(0, sys_path)
+
     await logger.ainfo("Loading opera config...", path=config)
     try:
         opera = Opera.from_config(
@@ -27,6 +33,12 @@ async def handle_run(config: str):
 
 
 run = subcommands.add_parser("run", help="Run the opera.")
+run.add_argument(
+    "--no-path",
+    action="store_false",
+    dest="path",
+    help="Do not add current path to sys.path.",
+)
 run.add_argument("config", help="The path to the opera configuration file.")
 run.set_defaults(handler=handle_run)
 

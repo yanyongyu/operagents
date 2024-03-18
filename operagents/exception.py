@@ -19,3 +19,7 @@ class BackendError(OperagentsException):
 
 class FlowError(OperagentsException):
     """Raised when the flow fails to choose the next character"""
+
+
+class PropError(OperagentsException):
+    """Raised when the prop fails to define or use"""
