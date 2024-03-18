@@ -1,5 +1,5 @@
-from typing_extensions import Self
 from dataclasses import field, dataclass
+from typing_extensions import Self, override
 from typing import TYPE_CHECKING, Literal, ClassVar
 
 from operagents import backend
@@ -32,6 +32,7 @@ class ModelDirector(Director):
         self.user_renderer = get_template_renderer(self.user_template)
 
     @classmethod
+    @override
     def from_config(cls, config: ModelDirectorConfig) -> Self:
         return cls(
             backend=backend.from_config(config.backend),
@@ -40,6 +41,7 @@ class ModelDirector(Director):
             allowed_scenes=config.allowed_scenes,
         )
 
+    @override
     async def next_scene(self, timeline: "Timeline") -> "Scene | None":
         """Return the next scene to be executed."""
         system_message = (

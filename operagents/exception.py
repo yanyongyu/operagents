@@ -15,3 +15,7 @@ class SceneFinished(OperagentsException):
 
 class BackendError(OperagentsException):
     """Raised when the backend fails to process the request"""
+
+
+class FlowError(OperagentsException):
+    """Raised when the flow fails to choose the next character"""

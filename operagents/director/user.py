@@ -1,5 +1,5 @@
 from typing import TYPE_CHECKING
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from noneprompt import Choice, ListPrompt
 
@@ -17,9 +17,11 @@ class UserDirector(Director):
     type_ = "user"
 
     @classmethod
+    @override
     def from_config(cls, config: UserDirectorConfig) -> Self:
         return cls()
 
+    @override
     async def next_scene(self, timeline: "Timeline") -> "Scene | None":
         scenes: list[Choice["Scene | OperaFinished | None"]] = [
             Choice("Continue current scene", None),

@@ -1,5 +1,8 @@
 import abc
+from typing_extensions import Self
 from typing import TYPE_CHECKING, ClassVar
+
+from operagents.config import FlowConfig
 
 if TYPE_CHECKING:
     from operagents.timeline import Timeline
@@ -9,6 +12,11 @@ if TYPE_CHECKING:
 class Flow(abc.ABC):
     type_: ClassVar[str]
     """The type of flow."""
+
+    @classmethod
+    @abc.abstractmethod
+    def from_config(cls, config: FlowConfig) -> Self:
+        raise NotImplementedError
 
     @abc.abstractmethod
     async def begin(self, timeline: "Timeline") -> "Character":

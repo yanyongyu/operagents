@@ -76,6 +76,25 @@ class OrderFlowConfig(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     type_: Literal["order"] = Field(alias="type")
+    order: list[str] | None = None
+
+
+class ModelFlowConfig(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    type_: Literal["model"] = Field(alias="type")
+    backend: BackendConfig
+    system_template: TemplateConfig
+    user_template: TemplateConfig
+    allowed_characters: list[str] | None = None
+    begin_character: str | None = None
+    fallback_character: str | None = None
+
+
+class UserFlowConfig(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    type_: Literal["user"] = Field(alias="type")
 
 
 class CustomFlowConfig(BaseModel):
@@ -86,7 +105,8 @@ class CustomFlowConfig(BaseModel):
 
 
 FlowConfig: TypeAlias = Annotated[
-    OrderFlowConfig | CustomFlowConfig, Field(discriminator="type_")
+    OrderFlowConfig | ModelFlowConfig | UserFlowConfig | CustomFlowConfig,
+    Field(discriminator="type_"),
 ]
 
 
@@ -125,6 +145,13 @@ class SceneConfig(BaseModel):
     characters: dict[str, CharacterConfig]
     flow: FlowConfig
     director: DirectorConfig
+
+    @model_validator(mode="after")
+    def check_order_flow(self) -> Self:
+        if isinstance(self.flow, OrderFlowConfig) and self.flow.order is not None:
+            if set(self.flow.order) - set(self.characters):
+                raise ValueError("Order flow order must be subset of scene characters")
+        return self
 
 
 class OperagentsConfig(BaseModel):
