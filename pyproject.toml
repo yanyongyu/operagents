@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "operagents"
-version = "0.0.5"
+version = "0.0.6"
 description = "Dynamic, highly customizable language agents framework"
 authors = ["yanyongyu <yyy@yyydl.top>"]
 license = "MIT"
