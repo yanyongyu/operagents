@@ -39,6 +39,7 @@ class ModelDirector(Director):
             system_template=config.system_template,
             user_template=config.user_template,
             allowed_scenes=config.allowed_scenes,
+            finish_flag=config.finish_flag,
         )
 
     @override
@@ -60,17 +61,18 @@ class ModelDirector(Director):
                 "content": new_message,
             },
         ]
-        await logger.adebug("Choosing next scene", messages=messages)
+        logger.debug("Choosing next scene with messages: {messages}", messages=messages)
         response = await self.backend.generate(messages)
-        await logger.adebug(response)
+        logger.debug("Director response: {response}", response=response)
+
+        if self.finish_flag is not None and self.finish_flag in response:
+            raise OperaFinished()
 
         allowed_scenes = (
-            list(timeline.opera.scenes)
+            timeline.opera.scenes
             if self.allowed_scenes is None
             else self.allowed_scenes
         )
-        if self.finish_flag is not None and self.finish_flag in response:
-            raise OperaFinished()
         for scene in allowed_scenes:
             if scene in response:
                 return timeline.opera.scenes[scene]

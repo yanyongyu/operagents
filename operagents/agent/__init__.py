@@ -2,8 +2,6 @@ from typing import TYPE_CHECKING
 from typing_extensions import Self
 from dataclasses import field, dataclass
 
-import structlog
-
 from operagents import backend
 from operagents.log import logger
 from operagents.utils import get_template_renderer
@@ -48,7 +46,7 @@ class Agent:
     """The memory of the agent."""
 
     def __post_init__(self):
-        self.logger: structlog.stdlib.BoundLogger = logger.bind(agent=self)
+        self.logger = logger.bind(agent=self)
         self.system_renderer = get_template_renderer(self.system_template)
         self.user_renderer = get_template_renderer(self.user_template)
         self.scene_summary_system_renderer = get_template_renderer(
@@ -97,7 +95,9 @@ class Agent:
         self, timeline: "Timeline", message: str, response: str
     ) -> None:
         """Make the agent respond to a message."""
-        await self.logger.ainfo(response, character=timeline.current_character)
+        self.logger.info(
+            response, scene=timeline.current_scene, character=timeline.current_character
+        )
 
         self.memory.remember(
             AgentEventObserve(scene=timeline.current_scene, content=message)
@@ -118,8 +118,11 @@ class Agent:
         new_message = (
             await self.user_renderer.render_async(agent=self, timeline=timeline)
         ).strip()
-        await self.logger.adebug(
-            "Fake acting", character=timeline.current_character, messages=new_message
+        self.logger.debug(
+            "Fake acting",
+            scene=timeline.current_scene,
+            character=timeline.current_character,
+            messages=new_message,
         )
         await self._do_response(timeline, new_message, response)
 
@@ -155,8 +158,11 @@ class Agent:
 
         props = timeline.current_character.props
 
-        await self.logger.adebug(
-            "Acting", character=timeline.current_character, messages=messages
+        self.logger.debug(
+            "Acting with messages: {messages}",
+            scene=timeline.current_scene,
+            character=timeline.current_character,
+            messages=messages,
         )
         response = await self.backend.generate(messages, props)
 
@@ -192,9 +198,11 @@ class Agent:
                     "content": summary_message,
                 },
             ]
-            await self.logger.adebug("Summarizing", scene=scene, messages=messages)
+            self.logger.debug(
+                "Summarizing with messages: {messages}", scene=scene, messages=messages
+            )
             response = await self.backend.generate(messages)
-            await self.logger.adebug(f"Summary: {response}", scene=scene)
+            self.logger.debug("Summary: {response}", scene=scene, response=response)
 
             self.memory.remember(
                 AgentEventSummary(scene=scene, content=summary_message)

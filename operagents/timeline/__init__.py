@@ -1,4 +1,3 @@
-import asyncio
 import weakref
 from types import TracebackType
 from typing import TYPE_CHECKING
@@ -91,27 +90,39 @@ class Timeline:
 
     async def next_time(self) -> None:
         """Go to the next character or scene."""
-        await logger.adebug(
-            f"Current character {self.current_character.name} starts to act."
+        logger.debug(
+            "Current character {current_character.name} starts to act.",
+            scene=self.current_scene,
+            current_character=self.current_character,
         )
         await self.character_act()
         if next_scene := await self.next_scene():
             # change to next scene
-            await logger.ainfo("Next scene", scene=next_scene)
+            logger.info(
+                "Next scene: {next_scene}",
+                scene=self.current_scene,
+                next_scene=next_scene,
+            )
             self._current_scene = next_scene
             self._current_character = await self.begin_character()
         else:
             # continue current scene with next character
             self._current_character = await self.next_character()
-            await logger.adebug(f"Next character {self.current_character.name}.")
+            logger.debug(
+                "Next character: {next_character.name}",
+                scene=self.current_scene,
+                next_character=self.current_character,
+            )
 
     async def __aenter__(self) -> "Timeline":
         self._events = []
         self._current_scene = self.opera.scenes[self.opera.opening_scene]
         self._current_character = await self.begin_character()
-        await logger.adebug(
-            f"Timeline starts with opening scene {self._current_scene.name}, "
-            f"begin character {self._current_character.name}."
+        logger.debug(
+            "Timeline starts with opening scene {opening_scene.name}, "
+            "begin character {begin_character.name}.",
+            opening_scene=self.current_scene,
+            begin_character=self.current_character,
         )
         return self
 
@@ -121,7 +132,7 @@ class Timeline:
         exc_value: BaseException | None,
         traceback: TracebackType | None,
     ) -> None:
-        await asyncio.shield(asyncio.create_task(logger.adebug("Timeline ends.")))
+        logger.debug("Timeline ends.")
         self._events = None
         self._current_scene = None
         self._current_character = None

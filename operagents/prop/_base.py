@@ -4,6 +4,8 @@ from typing import Any, Generic, ClassVar
 
 from pydantic import BaseModel
 
+from operagents.log import logger
+
 Jsonable = str | int | float | bool | list["Jsonable"] | dict[str, "Jsonable"]
 
 P = TypeVar("P", bound=BaseModel, default=BaseModel)
@@ -30,7 +32,26 @@ class Prop(abc.ABC, Generic[P, R]):
     params: type[P] | None
     """The parameters required by the prop to call functions."""
 
+    async def use(self, params: P | None) -> R:
+        """Use the prop to call functions."""
+        logger.debug(
+            "Using prop {prop.name} with params: {params!r}", prop=self, params=params
+        )
+        try:
+            result = await self.call(params)
+        except Exception:
+            logger.opt(exception=True).warning(
+                "Prop {prop.name} raised an exception", prop=self
+            )
+            raise
+        else:
+            logger.debug(
+                "Prop {prop.name} returned result: {result!r}", prop=self, result=result
+            )
+
+        return result
+
     @abc.abstractmethod
-    def use(self, params: P | None) -> R:
+    async def call(self, params: P | None) -> R:
         """Call function with the given parameters."""
         raise NotImplementedError

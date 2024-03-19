@@ -91,7 +91,8 @@ class OpenAIBackend(Backend):
                         available_props[call.function.name], call.function.arguments
                     )
                     for call in reply.tool_calls
-                )
+                ),
+                return_exceptions=True,
             )
 
             messages_.extend(
@@ -101,7 +102,7 @@ class OpenAIBackend(Backend):
                         {
                             "role": "tool",
                             "tool_call_id": call.id,
-                            "content": result,
+                            "content": str(result),
                         },
                     )
                     for call, result in zip(reply.tool_calls, results)

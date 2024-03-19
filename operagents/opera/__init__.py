@@ -33,11 +33,11 @@ class Opera:
         )
 
     async def run(self):
-        await logger.ainfo("Starting opera...")
+        logger.info("Starting opera...")
         async with self.timeline:
             while True:
                 try:
                     await self.timeline.next_time()
                 except OperaFinished:
                     break
-        await logger.ainfo("Opera finished.")
+        logger.info("Opera finished.")

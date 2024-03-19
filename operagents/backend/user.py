@@ -19,5 +19,5 @@ class UserBackend(Backend):
         try:
             return await InputPrompt("You: ").prompt_async()
         except CancelledError:
-            await logger.ainfo("User cancelled input.")
+            logger.info("User cancelled input.")
             raise OperaFinished() from None

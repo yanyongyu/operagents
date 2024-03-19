@@ -53,7 +53,7 @@ scenes:
         model: gpt-3.5-turbo-16k-0613
         temperature: 0.3
       system_template: |-
-        You are the director of the scene. Please observe the ongoing discussion and decide whether more communication is needed between user and AI assistant. If you think the conversation is over, please type "finish" to end the scene.
+        You are the director of the scene.
       user_template: |-
         Here is the chat history:
         {% for event in timeline.scene_events(timeline.current_scene) -%}
@@ -61,6 +61,20 @@ scenes:
         {{ event.character.agent_name }}({{ event.character.name }}): {{ event.content }}
         {%- endif %}
         {%- endfor %}
+
+        Please observe the ongoing discussion and decide whether more communication is needed between user and AI assistant.
+
+        If you think the conversation is over, you MUST use the format:
+
+        ```
+        finish
+        ```
+
+        else, you can continue the conversation by using the format:
+
+        ```
+        continue
+        ```
       allowed_scenes: []
       finish_flag: finish
     characters:

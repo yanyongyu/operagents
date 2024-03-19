@@ -51,7 +51,7 @@ class FunctionProp(Prop[P, R]):
         return self.function.__doc__ or ""
 
     @override
-    async def use(self, params: P | None) -> R:
+    async def call(self, params: P | None) -> R:
         if self.params is None:
             return await cast(FunctionNoParams[R], self.function)()
         if params is None:
