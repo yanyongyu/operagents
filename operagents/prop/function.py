@@ -1,11 +1,12 @@
 import inspect
 from typing import Any, cast
 from collections.abc import Callable, Awaitable
-from typing_extensions import TypeVar, override
+from typing_extensions import Self, TypeVar, override
 
 from pydantic import BaseModel
 
 from operagents.exception import PropError
+from operagents.config import FunctionPropConfig
 from operagents.utils import resolve_dot_notation
 
 from ._base import Prop
@@ -22,15 +23,9 @@ class FunctionProp(Prop[P, R]):
     type_ = "function"
 
     def __init__(
-        self, function: FunctionNoParams[R] | FunctionWithParams[P, R] | str
+        self, function: FunctionNoParams[R] | FunctionWithParams[P, R]
     ) -> None:
         super().__init__()
-
-        if isinstance(function, str):
-            function = cast(
-                FunctionNoParams[R] | FunctionWithParams[P, R],
-                resolve_dot_notation(function),
-            )
 
         self.function = function
 
@@ -49,6 +44,12 @@ class FunctionProp(Prop[P, R]):
     @override
     def description(self) -> str:
         return self.function.__doc__ or ""
+
+    @classmethod
+    @override
+    def from_config(cls, config: FunctionPropConfig) -> Self:
+        function = resolve_dot_notation(config.function)
+        return cls(function=function)
 
     @override
     async def call(self, params: P | None) -> R:

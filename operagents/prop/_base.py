@@ -1,10 +1,11 @@
 import abc
-from typing_extensions import TypeVar
 from typing import Any, Generic, ClassVar
+from typing_extensions import Self, TypeVar
 
 from pydantic import BaseModel
 
 from operagents.log import logger
+from operagents.config import PropConfig
 
 Jsonable = str | int | float | bool | list["Jsonable"] | dict[str, "Jsonable"]
 
@@ -31,6 +32,11 @@ class Prop(abc.ABC, Generic[P, R]):
 
     params: type[P] | None
     """The parameters required by the prop to call functions."""
+
+    @classmethod
+    @abc.abstractmethod
+    def from_config(cls, config: PropConfig) -> Self:
+        raise NotImplementedError
 
     async def use(self, params: P | None) -> R:
         """Use the prop to call functions."""
