@@ -17,6 +17,6 @@ all_backend_types: dict[str, type[Backend]] = {
 def from_config(config: BackendConfig) -> Backend:
     """Create a backend from a configuration."""
     if config.type_ == "custom":
-        backend_cls = resolve_dot_notation(config.path)
-        return backend_cls(**config.model_dump(exclude={"type_", "path"}))
-    return all_backend_types[config.type_](**config.model_dump(exclude={"type_"}))
+        backend_cls: type[Backend] = resolve_dot_notation(config.path)
+        return backend_cls.from_config(config)
+    return all_backend_types[config.type_].from_config(config)

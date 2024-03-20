@@ -41,6 +41,11 @@ opening_scene: talking
 scenes:
   talking:
     description:
+    prepare:
+      - type: preface
+        character_name: ai assistant
+        content: |-
+          Hello, I am John, your AI assistant. How can I help you today?
     flow:
       type: order
       order:

@@ -10,6 +10,8 @@ if TYPE_CHECKING:
 
 
 class Director(abc.ABC):
+    """A director for controlling the scene."""
+
     type_: ClassVar[str]
     """The type of director."""
 

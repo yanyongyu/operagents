@@ -39,6 +39,8 @@ class Character:
         agent = self.get_agent(timeline)
         return await agent.act(timeline)
 
-    async def fake_act(self, timeline: "Timeline", response: str) -> "TimelineEvent":
+    async def fake_act(
+        self, timeline: "Timeline", response: str, do_observe: bool = True
+    ) -> "TimelineEvent":
         agent = self.get_agent(timeline)
-        return await agent.fake_act(timeline, response)
+        return await agent.fake_act(timeline, response, do_observe=do_observe)

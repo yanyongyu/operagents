@@ -12,6 +12,6 @@ all_director_types: dict[str, type[Director]] = {
 
 def from_config(config: DirectorConfig) -> Director:
     if config.type_ == "custom":
-        director_cls = resolve_dot_notation(config.path)
-        return director_cls(**config.model_dump(exclude={"type_", "path"}))
+        director_cls: type[Director] = resolve_dot_notation(config.path)
+        return director_cls.from_config(config)
     return all_director_types[config.type_].from_config(config)

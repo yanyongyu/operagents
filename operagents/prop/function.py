@@ -48,8 +48,7 @@ class FunctionProp(Prop[P, R]):
     @classmethod
     @override
     def from_config(cls, config: FunctionPropConfig) -> Self:
-        function = resolve_dot_notation(config.function)
-        return cls(function=function)
+        return cls(function=resolve_dot_notation(config.function))
 
     @override
     async def call(self, params: P | None) -> R:

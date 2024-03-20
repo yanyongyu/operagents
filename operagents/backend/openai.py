@@ -1,11 +1,12 @@
 import asyncio
 from typing import TYPE_CHECKING, cast
-from typing_extensions import override
+from typing_extensions import Self, override
 
 import openai
 
 from operagents.prop import Prop
 from operagents.exception import BackendError
+from operagents.config import OpenaiBackendConfig
 
 from ._base import Backend, Message
 
@@ -31,6 +32,11 @@ class OpenAIBackend(Backend):
         self.client = openai.AsyncOpenAI()
         self.model: str = model
         self.temperature: float | None = temperature
+
+    @classmethod
+    @override
+    def from_config(cls, config: OpenaiBackendConfig) -> Self:
+        return cls(model=config.model, temperature=config.temperature)
 
     async def _use_prop(self, prop: Prop, args: str):
         if prop.params is None:

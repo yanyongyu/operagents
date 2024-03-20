@@ -1,12 +1,15 @@
 from typing import TYPE_CHECKING
-from dataclasses import dataclass
 from typing_extensions import Self
+from dataclasses import field, dataclass
 
 from operagents.flow import Flow
 from operagents import flow, director
 from operagents.director import Director
 from operagents.config import SceneConfig
 from operagents.character import Character
+
+from . import prepare
+from .prepare import ScenePrepare
 
 if TYPE_CHECKING:
     from operagents.timeline import Timeline
@@ -26,6 +29,9 @@ class Scene:
     director: Director
     """The director of the scene."""
 
+    prepare_actions: list[ScenePrepare] = field(default_factory=list)
+    """The actions to prepare the scene."""
+
     @classmethod
     def from_config(cls, name: str, config: SceneConfig) -> Self:
         return cls(
@@ -37,7 +43,12 @@ class Scene:
             },
             flow=flow.from_config(config.flow),
             director=director.from_config(config.director),
+            prepare_actions=[prepare.from_config(action) for action in config.prepare],
         )
+
+    async def prepare(self, timeline: "Timeline") -> None:
+        for action in self.prepare_actions:
+            await action.prepare(timeline)
 
     async def next_character(self, timeline: "Timeline") -> Character:
         return await self.flow.next(timeline)

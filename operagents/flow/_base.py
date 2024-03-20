@@ -10,6 +10,8 @@ if TYPE_CHECKING:
 
 
 class Flow(abc.ABC):
+    """A flow for controlling the characters in a scene."""
+
     type_: ClassVar[str]
     """The type of flow."""
 

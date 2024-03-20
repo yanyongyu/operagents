@@ -91,17 +91,18 @@ class Agent:
         # This should never happen
         raise ValueError(f"Unknown memory event type: {memory_event.type_}")
 
-    async def _do_response(
-        self, timeline: "Timeline", message: str, response: str
-    ) -> None:
+    def _do_observe(self, timeline: "Timeline", message: str) -> None:
+        """Make the agent observe a message."""
+        self.memory.remember(
+            AgentEventObserve(scene=timeline.current_scene, content=message)
+        )
+
+    def _do_response(self, timeline: "Timeline", response: str) -> None:
         """Make the agent respond to a message."""
         self.logger.info(
             response, scene=timeline.current_scene, character=timeline.current_character
         )
 
-        self.memory.remember(
-            AgentEventObserve(scene=timeline.current_scene, content=message)
-        )
         self.memory.remember(
             AgentEventAct(
                 scene=timeline.current_scene,
@@ -110,21 +111,30 @@ class Agent:
             )
         )
 
-    async def fake_act(self, timeline: "Timeline", response: str) -> "TimelineEvent":
+    async def fake_act(
+        self, timeline: "Timeline", response: str, do_observe: bool = True
+    ) -> "TimelineEvent":
         """Make the agent act with a given response."""
 
         await self._act_precheck(timeline)
 
         new_message = (
-            await self.user_renderer.render_async(agent=self, timeline=timeline)
-        ).strip()
+            (
+                await self.user_renderer.render_async(agent=self, timeline=timeline)
+            ).strip()
+            if do_observe
+            else None
+        )
         self.logger.debug(
             "Fake acting",
             scene=timeline.current_scene,
             character=timeline.current_character,
             messages=new_message,
         )
-        await self._do_response(timeline, new_message, response)
+
+        if new_message is not None:
+            self._do_observe(timeline, new_message)
+        self._do_response(timeline, response)
 
         return TimelineEventAct(
             character=timeline.current_character,
@@ -166,7 +176,8 @@ class Agent:
         )
         response = await self.backend.generate(messages, props)
 
-        await self._do_response(timeline, new_message, response)
+        self._do_observe(timeline, new_message)
+        self._do_response(timeline, response)
 
         return TimelineEventAct(
             character=timeline.current_character,

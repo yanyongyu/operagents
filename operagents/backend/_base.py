@@ -1,8 +1,9 @@
 import abc
 from typing import Literal, ClassVar, TypeAlias
-from typing_extensions import Required, TypedDict
+from typing_extensions import Self, Required, TypedDict
 
 from operagents.prop import Prop
+from operagents.config import BackendConfig
 
 
 class Function(TypedDict):
@@ -56,10 +57,20 @@ Message: TypeAlias = SystemMessage | UserMessage | AssistantMessage
 
 
 class Backend(abc.ABC):
+    """A backend for generating messages."""
+
     type_: ClassVar[str]
+    """The type of the backend."""
+
+    @classmethod
+    @abc.abstractmethod
+    def from_config(cls, config: BackendConfig) -> Self:
+        """Create a backend from a configuration."""
+        raise NotImplementedError
 
     @abc.abstractmethod
     async def generate(
         self, messages: list[Message], props: list["Prop"] | None = None
     ) -> str:
+        """Generate a message based on the given messages and props."""
         raise NotImplementedError

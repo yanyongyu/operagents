@@ -52,6 +52,34 @@ class AgentConfig(BaseModel):
     scene_summary_user_template: TemplateConfig = AGENT_SCENE_SUMMARY_USER_TEMPLATE
 
 
+class PrefaceScenePrepareConfig(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    type_: Literal["preface"] = Field(alias="type")
+    character_name: str
+    content: str
+
+
+class FunctionScenePrepareConfig(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    type_: Literal["function"] = Field(alias="type")
+    function: str
+
+
+class CustomScenePrepareConfig(BaseModel):
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
+
+    type_: Literal["custom"] = Field(alias="type")
+    path: str
+
+
+ScenePrepareConfig = Annotated[
+    PrefaceScenePrepareConfig | FunctionScenePrepareConfig | CustomScenePrepareConfig,
+    Field(discriminator="type_"),
+]
+
+
 class FunctionPropConfig(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -147,9 +175,21 @@ DirectorConfig: TypeAlias = Annotated[
 
 class SceneConfig(BaseModel):
     description: str | None = None
+    prepare: list[ScenePrepareConfig] = Field(default_factory=list)
     characters: dict[str, CharacterConfig]
     flow: FlowConfig
     director: DirectorConfig
+
+    @model_validator(mode="after")
+    def check_preface_prepare(self) -> Self:
+        for prepare in self.prepare:
+            if isinstance(prepare, PrefaceScenePrepareConfig):
+                if prepare.character_name not in self.characters:
+                    raise ValueError(
+                        f"Preface prepare character {prepare.character_name} "
+                        "not found in scene characters"
+                    )
+        return self
 
     @model_validator(mode="after")
     def check_order_flow(self) -> Self:
