@@ -6,6 +6,10 @@ class OperaFinished(OperagentsException):
     """Raised when no more scenes are available and the opera has finished"""
 
 
+class TimelineNotStarted(OperagentsException):
+    """Raised when the timeline has not been started"""
+
+
 class SceneFinished(OperagentsException):
     """Raised when the scene has already finished.
 

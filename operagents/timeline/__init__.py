@@ -3,6 +3,7 @@ from types import TracebackType
 from typing import TYPE_CHECKING
 
 from operagents.log import logger
+from operagents.exception import TimelineNotStarted
 
 from .event import TimelineEvent
 
@@ -34,26 +35,35 @@ class Timeline:
     def events(self) -> list[TimelineEvent]:
         """The timeline's event history."""
         if self._events is None:
-            raise RuntimeError("The timeline has not been started.")
+            raise TimelineNotStarted("The timeline has not been started.")
         return self._events
 
     @property
     def current_scene(self) -> "Scene":
         """The current scene."""
         if self._current_scene is None:
-            raise RuntimeError("The timeline has not been started.")
+            raise TimelineNotStarted("The timeline has not been started.")
         return self._current_scene
 
     @property
     def current_character(self) -> "Character":
         """The current character."""
         if self._current_character is None:
-            raise RuntimeError("The timeline has not been started.")
+            raise TimelineNotStarted("The timeline has not been started.")
         return self._current_character
+
+    @property
+    def current_act_num(self) -> int:
+        """The number of acts in the current scene."""
+        return self.act_num_in_scene(self.current_scene)
 
     def scene_events(self, scene: "Scene") -> list[TimelineEvent]:
         """Get the events in the scene."""
         return [event for event in self.events if event.scene.name == scene.name]
+
+    def act_num_in_scene(self, scene: "Scene") -> int:
+        """Get the number of acts in the scene."""
+        return sum(1 for event in self.scene_events(scene) if event.type_ == "act")
 
     def past_events(self, agent: "Agent") -> list[TimelineEvent]:
         """Get the events since the last time the agent acted in current scene."""
@@ -82,6 +92,11 @@ class Timeline:
     async def character_act(self) -> None:
         """Make the current character act in the scene."""
         event = await self.current_character.act(self)
+        self.events.append(event)
+
+    async def character_fake_act(self, response: str) -> None:
+        """Make the current character act in the scene with a given response."""
+        event = await self.current_character.fake_act(self, response)
         self.events.append(event)
 
     async def next_scene(self) -> "Scene | None":

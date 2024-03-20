@@ -111,7 +111,7 @@ class Agent:
         )
 
     async def fake_act(self, timeline: "Timeline", response: str) -> "TimelineEvent":
-        """Make the agent act with a fake response."""
+        """Make the agent act with a given response."""
 
         await self._act_precheck(timeline)
 
