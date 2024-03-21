@@ -1,6 +1,6 @@
+from typing import TYPE_CHECKING
 from dataclasses import field, dataclass
 from typing_extensions import Self, override
-from typing import TYPE_CHECKING, Literal, ClassVar
 
 from operagents import backend
 from operagents.log import logger
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class ModelDirector(Director):
-    type_: ClassVar[Literal["model"]] = "model"
+    type_ = "model"
 
     backend: "Backend" = field()
 
@@ -33,7 +33,9 @@ class ModelDirector(Director):
 
     @classmethod
     @override
-    def from_config(cls, config: ModelDirectorConfig) -> Self:
+    def from_config(  # pyright: ignore[reportIncompatibleMethodOverride]
+        cls, config: ModelDirectorConfig
+    ) -> Self:
         return cls(
             backend=backend.from_config(config.backend),
             system_template=config.system_template,

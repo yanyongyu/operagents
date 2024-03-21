@@ -79,6 +79,9 @@ mark-parentheses = false
 pythonVersion = "3.10"
 pythonPlatform = "All"
 
+typeCheckingMode = "standard"
+disableBytesTypePromotions = true
+
 [build-system]
 requires = ["poetry_core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"

@@ -1,6 +1,6 @@
+from typing import TYPE_CHECKING
 from dataclasses import dataclass
 from typing_extensions import Self, override
-from typing import TYPE_CHECKING, Literal, ClassVar
 
 from operagents.config import PrefaceScenePrepareConfig
 
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class PrefaceScenePrepare(ScenePrepare):
-    type_: ClassVar[Literal["preface"]] = "preface"
+    type_ = "preface"
 
     character_name: str
     """The name of the character."""
@@ -21,7 +21,9 @@ class PrefaceScenePrepare(ScenePrepare):
 
     @classmethod
     @override
-    def from_config(cls, config: PrefaceScenePrepareConfig) -> Self:
+    def from_config(  # pyright: ignore[reportIncompatibleMethodOverride]
+        cls, config: PrefaceScenePrepareConfig
+    ) -> Self:
         return cls(character_name=config.character_name, content=config.content)
 
     @override

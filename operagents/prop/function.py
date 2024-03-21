@@ -47,7 +47,9 @@ class FunctionProp(Prop[P, R]):
 
     @classmethod
     @override
-    def from_config(cls, config: FunctionPropConfig) -> Self:
+    def from_config(  # pyright: ignore[reportIncompatibleMethodOverride]
+        cls, config: FunctionPropConfig
+    ) -> Self:
         return cls(function=resolve_dot_notation(config.function))
 
     @override

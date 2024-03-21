@@ -2,6 +2,8 @@ import abc
 from typing_extensions import Self
 from typing import TYPE_CHECKING, ClassVar
 
+from operagents.config import ScenePrepareConfig
+
 if TYPE_CHECKING:
     from operagents.timeline import Timeline
 
@@ -14,7 +16,7 @@ class ScenePrepare(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def from_config(cls, config) -> Self:
+    def from_config(cls, config: ScenePrepareConfig) -> Self:
         """Create a scene prepare from the config."""
         raise NotImplementedError
 

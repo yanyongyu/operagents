@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 from typing_extensions import Self, override
-from typing import TYPE_CHECKING, Any, Literal, ClassVar
 
 from operagents.utils import resolve_dot_notation
 from operagents.config import FunctionScenePrepareConfig
@@ -14,13 +14,15 @@ if TYPE_CHECKING:
 
 @dataclass
 class FunctionScenePrepare(ScenePrepare):
-    type_: ClassVar[Literal["function"]] = "function"
+    type_ = "function"
 
     function: Callable[["Timeline"], Any]
 
     @classmethod
     @override
-    def from_config(cls, config: FunctionScenePrepareConfig) -> Self:
+    def from_config(  # pyright: ignore[reportIncompatibleMethodOverride]
+        cls, config: FunctionScenePrepareConfig
+    ) -> Self:
         return cls(function=resolve_dot_notation(config.function))
 
     @override

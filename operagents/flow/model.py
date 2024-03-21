@@ -1,6 +1,6 @@
+from typing import TYPE_CHECKING
 from dataclasses import field, dataclass
 from typing_extensions import Self, override
-from typing import TYPE_CHECKING, Literal, ClassVar
 
 from operagents import backend
 from operagents.log import logger
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class ModelFlow(Flow):
-    type_: ClassVar[Literal["model"]] = "model"
+    type_ = "model"
 
     backend: "Backend" = field()
 
@@ -36,7 +36,9 @@ class ModelFlow(Flow):
 
     @classmethod
     @override
-    def from_config(cls, config: ModelFlowConfig) -> Self:
+    def from_config(  # pyright: ignore[reportIncompatibleMethodOverride]
+        cls, config: ModelFlowConfig
+    ) -> Self:
         return cls(
             backend=backend.from_config(config.backend),
             system_template=config.system_template,

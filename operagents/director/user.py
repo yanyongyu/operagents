@@ -18,7 +18,9 @@ class UserDirector(Director):
 
     @classmethod
     @override
-    def from_config(cls, config: UserDirectorConfig) -> Self:
+    def from_config(  # pyright: ignore[reportIncompatibleMethodOverride]
+        cls, config: UserDirectorConfig
+    ) -> Self:
         return cls()
 
     @override

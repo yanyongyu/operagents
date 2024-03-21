@@ -1,5 +1,5 @@
+from typing import TYPE_CHECKING
 from typing_extensions import Self, override
-from typing import TYPE_CHECKING, Literal, ClassVar
 
 from noneprompt import Choice, ListPrompt
 
@@ -15,11 +15,13 @@ if TYPE_CHECKING:
 
 
 class UserFlow(Flow):
-    type_: ClassVar[Literal["user"]] = "user"
+    type_ = "user"
 
     @classmethod
     @override
-    def from_config(cls, config: UserFlowConfig) -> Self:
+    def from_config(  # pyright: ignore[reportIncompatibleMethodOverride]
+        cls, config: UserFlowConfig
+    ) -> Self:
         return cls()
 
     @override

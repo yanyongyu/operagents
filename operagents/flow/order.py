@@ -1,6 +1,6 @@
+from typing import TYPE_CHECKING
 from dataclasses import dataclass
 from typing_extensions import Self, override
-from typing import TYPE_CHECKING, Literal, ClassVar
 
 from operagents.config import OrderFlowConfig
 
@@ -13,13 +13,15 @@ if TYPE_CHECKING:
 
 @dataclass
 class OrderFlow(Flow):
-    type_: ClassVar[Literal["order"]] = "order"
+    type_ = "order"
 
     order: list[str] | None = None
 
     @classmethod
     @override
-    def from_config(cls, config: OrderFlowConfig) -> Self:
+    def from_config(  # pyright: ignore[reportIncompatibleMethodOverride]
+        cls, config: OrderFlowConfig
+    ) -> Self:
         return cls(order=config.order)
 
     @override

@@ -35,7 +35,9 @@ class OpenAIBackend(Backend):
 
     @classmethod
     @override
-    def from_config(cls, config: OpenaiBackendConfig) -> Self:
+    def from_config(  # pyright: ignore[reportIncompatibleMethodOverride]
+        cls, config: OpenaiBackendConfig
+    ) -> Self:
         return cls(model=config.model, temperature=config.temperature)
 
     async def _use_prop(self, prop: Prop, args: str):

@@ -5,6 +5,12 @@ on:
     branches:
       - master
   pull_request:
+    paths:
+      - "operagents/**"
+      - ".github/actions/setup-python/**"
+      - ".github/workflows/pyright.yml"
+      - "pyproject.toml"
+      - "poetry.lock"
 
 jobs:
   ruff:

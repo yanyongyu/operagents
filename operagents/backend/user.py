@@ -15,7 +15,9 @@ class UserBackend(Backend):
 
     @classmethod
     @override
-    def from_config(cls, config: UserBackendConfig) -> Self:
+    def from_config(  # pyright: ignore[reportIncompatibleMethodOverride]
+        cls, config: UserBackendConfig
+    ) -> Self:
         return cls()
 
     @override
