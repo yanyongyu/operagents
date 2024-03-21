@@ -103,6 +103,39 @@ agents:
       {%- endfor %}
 ```
 
+Another part of the agent config is the scene summary system/user template, which is used to generate the summary of the scene. You can use the `scene_summary_system_template`/`scene_summary_user_template` key to specify the scene summary system/user template. Here is an example of the template config:
+
+```yaml
+agents:
+  John:
+    scene_summary_system_template: |-
+      Your name is {{ agent.name }}.
+      Your task is to summarize the historical dialogue records according to the current scene, and summarize the most important information.
+    scene_summary_user_template: |-
+      {% for event in agent.memory.get_memory_for_scene(scene) -%}
+      {% if event.type_ == "observe" -%}
+      {{ event.content }}
+      {%- elif event.type_ == "act" -%}
+      {{ agent.name }}({{ event.character.name }}): {{ event.content }}
+      {%- endif %}
+      {%- endfor %}
+      {% for event in timeline.past_events_in_scene(agent, scene) -%}
+      {% if event.type_ == "act" -%}
+      {{ event.character.agent_name }}({{ event.character.name }}): {{ event.content }}
+      {%- endif %}
+      {%- endfor %}
+```
+
+### Opening scene config
+
+The `opening_scene` key is used to specify the start scene of the opera. The value is the name of the opening scene.
+
+```yaml
+opening_scene: "Introduction"
+```
+
+### The Scene config
+
 ## Examples
 
 ### Chatbot
