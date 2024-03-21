@@ -1,0 +1,21 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: operagents
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Yongyu
+    family-names: Yan
+    email: yyy@yyydl.top
+repository-code: "https://github.com/yanyongyu/operagents"
+abstract: >-
+  Operagents, an dynamic, highly customizable language
+  agents framework
+keywords:
+  - agent
+  - language-model
+license: Apache-2.0
