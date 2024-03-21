@@ -160,6 +160,12 @@ class UserDirectorConfig(BaseModel):
     type_: Literal["user"] = Field(alias="type")
 
 
+class NeverDirectorConfig(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    type_: Literal["never"] = Field(alias="type")
+
+
 class CustomDirectorConfig(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
@@ -168,7 +174,10 @@ class CustomDirectorConfig(BaseModel):
 
 
 DirectorConfig: TypeAlias = Annotated[
-    ModelDirectorConfig | UserDirectorConfig | CustomDirectorConfig,
+    ModelDirectorConfig
+    | UserDirectorConfig
+    | NeverDirectorConfig
+    | CustomDirectorConfig,
     Field(discriminator="type_"),
 ]
 
