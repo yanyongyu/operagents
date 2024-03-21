@@ -62,13 +62,54 @@ If you want to use custom functions in the template, you need to provide the `cu
 
 The `agents` section is a dictionary of agents, where the key is the agent's name and the value is the agent's config.
 
+The agents need to act as a character in the scenes and respond to others' messages. So, the first part of the agent config is the backend config, which is used to communicate with the language model or user. You can use the `backend` key to specify the backend type and its config.
+
+```yaml
+agents:
+  Mike:
+    backend:
+      # user as the backend (a.k.a human-agent)
+      type: user
+  John:
+    backend:
+      # openai api as the backend
+      type: openai
+      model: gpt-3.5-turbo-16k-0613
+      temperature: 0.5
+```
+
+The next part of the agent config is the system/user template used to generate the context input for the language model. You can use the `system_template`/`user_template` key to specify the system/user template. Here is an example of the template config:
+
+```yaml
+agents:
+  John:
+    system_template: |-
+      Your name is {{ agent.name }}.
+      Current scene is {{ timeline.current_scene.name }}.
+      {% if timeline.current_scene.description -%}
+      {{ timeline.current_scene.description }}
+      {%- endif -%}
+      You are acting as {{ timeline.current_character.name }}.
+      {% if timeline.current_character.description -%}
+      {{ timeline.current_character.description }}
+      {%- endif -%}
+      Please continue the conversation on behalf of {{ agent.name }}({{ timeline.current_character.name }}) based on your known information and make your answer appear as natural and coherent as possible.
+      Please answer directly what you want to say and keep your reply as concise as possible.
+    user_template: |-
+      {% for event in timeline.past_events(agent) -%}
+      {% if event.type_ == "act" -%}
+      {{ event.character.agent_name }}({{ event.character.name }}): {{ event.content }}
+      {%- endif %}
+      {%- endfor %}
+```
+
 ## Examples
 
 ### Chatbot
 
 ```bash
 cd examples/chatbot
-env OPENAI_API_KEY=sk-xxx OPENAI_BASE_URL=https://api.openai.com/v1 operagents run config.yaml
+env OPENAI_API_KEY=sk-xxx OPENAI_BASE_URL=https://api.openai.com/v1 operagents run --log-level DEBUG config.yaml
 ```
 
 ## Development
