@@ -3,10 +3,11 @@ from typing import TYPE_CHECKING, cast
 from typing_extensions import Self, override
 
 import openai
+from pydantic import ValidationError
 
 from operagents.prop import Prop
-from operagents.exception import BackendError
 from operagents.config import OpenaiBackendConfig
+from operagents.exception import BackendError, OperagentsException
 
 from ._base import Backend, Message
 
@@ -40,12 +41,22 @@ class OpenAIBackend(Backend):
     ) -> Self:
         return cls(model=config.model, temperature=config.temperature)
 
-    async def _use_prop(self, prop: Prop, args: str):
+    async def _use_prop(self, prop: Prop, args: str) -> str:
         if prop.params is None:
-            return await prop.use(None)
+            param = None
         else:
-            param = prop.params.model_validate_json(args)
-            return await prop.use(param)
+            try:
+                param = prop.params.model_validate_json(args)
+            except ValidationError as e:
+                return str(e)
+
+        try:
+            return str(await prop.use(param))
+        except OperagentsException:
+            # bypass operagents exceptions
+            raise
+        except Exception as e:
+            return str(e)
 
     def _prop_to_tool(self, prop: Prop) -> "ChatCompletionToolParam":
         if prop.params is None:
@@ -99,8 +110,7 @@ class OpenAIBackend(Backend):
                         available_props[call.function.name], call.function.arguments
                     )
                     for call in reply.tool_calls
-                ),
-                return_exceptions=True,
+                )
             )
 
             messages_.extend(
@@ -110,7 +120,7 @@ class OpenAIBackend(Backend):
                         {
                             "role": "tool",
                             "tool_call_id": call.id,
-                            "content": str(result),
+                            "content": result,
                         },
                     )
                     for call, result in zip(reply.tool_calls, results)

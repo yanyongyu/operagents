@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from operagents.log import logger
 from operagents.config import PropConfig
+from operagents.exception import OperaFinished
 
 Jsonable = str | int | float | bool | list["Jsonable"] | dict[str, "Jsonable"]
 
@@ -45,6 +46,10 @@ class Prop(abc.ABC, Generic[P, R]):
         )
         try:
             result = await self.call(params)
+        except OperaFinished:
+            logger.info("Prop {prop.name} ended the opera", prop=self)
+            # allow prop to end the opera
+            raise
         except Exception:
             logger.opt(exception=True).warning(
                 "Prop {prop.name} raised an exception", prop=self
