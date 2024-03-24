@@ -18,7 +18,7 @@ FunctionWithParams = Callable[[P], Awaitable[R]]
 
 
 class FunctionProp(Prop[P, R]):
-    """Call custom functions."""
+    """Call custom functions with pydantic model."""
 
     type_ = "function"
 

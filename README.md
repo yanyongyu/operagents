@@ -78,6 +78,38 @@ agents:
       temperature: 0.5
 ```
 
+You can also customize the backend by providing a object path of the custom backend class that implements the `Backend` abstract class.:
+
+```yaml
+agents:
+  Mike:
+    backend:
+      type: custom
+      class_path: module_name:CustomBackend
+      custom_config: value
+```
+
+```python
+# module_name.py
+
+from typing import Self
+
+from operagents.prop import Prop
+from operagents.backend import Backend, Message
+from operagents.config import CustomBackendConfig
+
+
+class CustomBackend(Backend):
+    @classmethod
+    def from_config(cls, config: CustomBackendConfig) -> Self:
+        return cls()
+
+    async def generate(
+        self, messages: list[Message], props: list[Prop] | None = None
+    ) -> str:
+        return ""
+```
+
 The next part of the agent config is the system/user template used to generate the context input for the language model. You can use the `system_template`/`user_template` key to specify the system/user template. Here is an example of the template config:
 
 ```yaml
@@ -135,6 +167,232 @@ opening_scene: "Introduction"
 ```
 
 ### The Scene config
+
+The `scenes` section is a dictionary of scenes, where the key is the scene's name and the value is the scene's config.
+
+The opera is composed of multiple scenes, and each scene has a number of characters. You first need to define the name, description (optional), and characters of the scene.
+
+```yaml
+scenes:
+  talking:
+    description: "The scene is about two people talking."
+    characters:
+      user:
+        agent_name: "Mike"
+      ai assistant:
+        agent_name: "John"
+        description: |-
+          You are a helpful assistant.
+        props: []
+```
+
+The characters in the scene must define the `agent_name` key, which is the name of the agent acting as the character. The `description` key (optional) can be used to describe the character in the agent template. The `props` key (optional) can be used to define the props of the character, see [the Prop config](#the-prop-config) for more details.
+
+The `Flow` of the scene is designed to control the order of the characters' acting. You can specify the type and the parameters of the `Flow`.
+
+1. `order` type
+
+   The `order` type is used to pre-define the order of the characters' acting. The characters will cycle through the order list until the scene ends.
+
+   ```yaml
+   scenes:
+     talking:
+       flow:
+         type: order
+         order:
+           - user
+           - ai assistant
+   ```
+
+2. `model` type
+
+   The `model` type is used to specify the model to predict the next character to act. The model will predict the next character based on the current context.
+
+   ```yaml
+   scenes:
+     talking:
+       flow:
+         type: model
+         backend:
+           type: openai
+           model: gpt-3.5-turbo-16k-0613
+           temperature: 0.5
+         system_template: ""
+         user_template: ""
+         allowed_characters: # optional, the characters allowed to act
+           - user
+           - ai assistant
+         begin_character: user # optional, the first character to act
+         fallback_character: ai assistant # optional, the fallback character when the model fails to predict
+   ```
+
+3. `user` type
+
+   The `user` type allows human to choose the next character to act.
+
+   ```yaml
+   scenes:
+     talking:
+       flow:
+         type: user
+   ```
+
+4. `custom` type
+
+   The `custom` type allows you to define a custom flow class to control the order of the characters' acting.
+
+   ```yaml
+   scenes:
+     talking:
+       flow:
+         type: custom
+         class_path: module_name:CustomFlow
+         custom_config: value
+   ```
+
+   ```python
+   # module_name.py
+
+   from typing import Self
+
+   from operagents.flow import Flow
+   from operagents.timeline import Timeline
+   from operagents.character import Character
+   from operagents.config import CustomFlowConfig
+
+
+   class CustomFlow(Flow):
+       @classmethod
+       def from_config(cls, config: CustomFlowConfig) -> Self:
+           return cls()
+
+       async def begin(self, timeline: Timeline) -> Character:
+           return ""
+
+       async def next(self, timeline: Timeline) -> Character:
+           return ""
+   ```
+
+The `Director` of the scene is used to control the next scene to play. You can specify the type and the parameters of the Director.
+
+1. `model` type
+
+   The `model` type is used to specify the model to predict the next scene to play. If no finish flag found or no scene name found, the curent scene will continue to play.
+
+   ```yaml
+   scenes:
+     talking:
+       director:
+         type: model
+         backend:
+           type: openai
+           model: gpt-3.5-turbo-16k-0613
+           temperature: 0.5
+         system_template: ""
+         user_template: ""
+         allowed_scenes: # optional, the next scenes allowed to play
+           - walking
+           - running
+         finish_flag: "finish" # optional, the finish flag to end the opera
+   ```
+
+2. `user` type
+
+   The `user` type allows human to choose the next scene to play.
+
+   ```yaml
+   scenes:
+     talking:
+       director:
+         type: user
+   ```
+
+3. `never` type
+
+   The `never` Director never ends the current scene. Useful when there is a single scene and you want to end the opera by a `Prop`.
+
+   ```yaml
+   scenes:
+     talking:
+       director:
+         type: never
+   ```
+
+### The Prop config
+
+The characters in the scene can use props to improve there acting. The `props` section is a list of props, where each prop is a dictionary with the prop type and the prop config.
+
+1. `function` Prop
+
+   The `function` prop will call the custom function when the prop is used.
+
+   ```yaml
+   scenes:
+     talking:
+       characters:
+         ai assistant:
+           props:
+             - type: function
+               function: module_name:function_name
+   ```
+
+   The custom function should has no arguments or one argument of type `pydantic.BaseModel`.
+
+   ```python
+   from pydantic import Field, BaseModel
+   from datetime import datetime, timezone
+
+   async def current_time() -> str:
+       """Get the current real world time."""
+       return datetime.now(timezone.utc).astimezone().isoformat()
+
+   class Args(BaseModel):
+       name: str = Field(description="The name")
+
+   async def greet(args: Args) -> str:
+       """Greet the name."""
+       return f"Hello, {args.name}!"
+   ```
+
+   Note that the function's name and docstring will be used as the prop's name and description. You can also provide the description of the args by pydantic's `Field`.
+
+2. `custom` Prop
+
+   The `custom` prop will call the custom prop class when the prop is used.
+
+   ```yaml
+   scenes:
+     talking:
+       characters:
+         ai assistant:
+           props:
+             - type: custom
+               class_path: module_name:CustomProp
+               custom_config: value
+   ```
+
+   ```python
+   # module_name.py
+
+   from typing import Any, Self
+
+   from pydantic import BaseModel
+   from operagents.prop import Prop
+   from operagents.config import CustomPropConfig
+
+   class CustomProp(Prop):
+       """The description of the prop"""
+
+       params: BaseModel | None
+       """The parameters of the prop"""
+
+       @classmethod
+       def from_config(cls, config: CustomPropConfig) -> Self:
+           return cls()
+
+       async def call(self, params: BaseModel | None) -> Any:
+           return ""
+   ```
 
 ## Examples
 
