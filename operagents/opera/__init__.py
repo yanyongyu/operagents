@@ -1,12 +1,18 @@
+from typing import TypedDict
 from dataclasses import dataclass
 from typing_extensions import Self
 
 from operagents.log import logger
-from operagents.agent import Agent
 from operagents.scene import Scene
-from operagents.timeline import Timeline
+from operagents.agent import Agent, AgentEvent
 from operagents.config import OperagentsConfig
 from operagents.exception import OperaFinished
+from operagents.timeline import Timeline, TimelineEvent
+
+
+class OperaResult(TypedDict):
+    timeline_events: list[TimelineEvent]
+    agent_memories: dict[str, list[AgentEvent]]
 
 
 @dataclass(eq=False)
@@ -32,12 +38,21 @@ class Opera:
             opening_scene=config.opening_scene,
         )
 
-    async def run(self):
+    async def run(self) -> OperaResult:
         logger.info("Starting opera...")
         async with self.timeline:
-            while True:
-                try:
-                    await self.timeline.next_time()
-                except OperaFinished:
-                    break
+            try:
+                while True:
+                    try:
+                        await self.timeline.next_time()
+                    except OperaFinished:
+                        break
+            finally:
+                timeline_events = self.timeline.events
+                agent_memories = {
+                    agent.name: agent.memory.events for agent in self.agents.values()
+                }
         logger.info("Opera finished.")
+        return OperaResult(
+            timeline_events=timeline_events, agent_memories=agent_memories
+        )

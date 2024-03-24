@@ -1,11 +1,13 @@
 import weakref
 from types import TracebackType
 from typing import TYPE_CHECKING
+from typing_extensions import Self
+from contextlib import AsyncExitStack
 
 from operagents.log import logger
 from operagents.exception import TimelineNotStarted
 
-from .event import TimelineEvent
+from .event import TimelineEvent as TimelineEvent
 
 if TYPE_CHECKING:
     from operagents.agent import Agent
@@ -22,6 +24,7 @@ class Timeline:
         self._events: list[TimelineEvent] | None = None
         self._current_scene: "Scene | None" = None
         self._current_character: "Character | None" = None
+        self._exit_stack: AsyncExitStack | None = None
 
     @property
     def opera(self) -> "Opera":
@@ -130,8 +133,12 @@ class Timeline:
                 next_character=self.current_character,
             )
 
-    async def __aenter__(self) -> "Timeline":
+    async def __aenter__(self) -> Self:
         self._events = []
+        self._exit_stack = AsyncExitStack()
+
+        for agent in self.opera.agents.values():
+            await self._exit_stack.enter_async_context(agent)
 
         self._current_scene = self.opera.scenes[self.opera.opening_scene]
         logger.debug(
@@ -150,6 +157,12 @@ class Timeline:
         traceback: TracebackType | None,
     ) -> None:
         logger.debug("Timeline ends.")
-        self._events = None
-        self._current_scene = None
-        self._current_character = None
+
+        try:
+            if self._exit_stack is not None:
+                await self._exit_stack.aclose()
+        finally:
+            self._events = None
+            self._exit_stack = None
+            self._current_scene = None
+            self._current_character = None

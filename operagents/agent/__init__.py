@@ -1,3 +1,4 @@
+from types import TracebackType
 from typing import TYPE_CHECKING
 from typing_extensions import Self
 from dataclasses import field, dataclass
@@ -5,16 +6,12 @@ from dataclasses import field, dataclass
 from operagents import backend
 from operagents.log import logger
 from operagents.utils import get_template_renderer
+from operagents.exception import TimelineNotStarted
 from operagents.timeline.event import TimelineEventAct
 from operagents.config import AgentConfig, TemplateConfig
 
-from .memory import (
-    AgentEvent,
-    AgentMemory,
-    AgentEventAct,
-    AgentEventObserve,
-    AgentEventSummary,
-)
+from .memory import AgentEvent as AgentEvent
+from .memory import AgentMemory, AgentEventAct, AgentEventObserve, AgentEventSummary
 
 if TYPE_CHECKING:
     from operagents.timeline import Timeline
@@ -40,10 +37,7 @@ class Agent:
     scene_summary_user_template: TemplateConfig = field(kw_only=True)
     """The scene summary user template to use for generating summary."""
 
-    # chat_history: list["Message"] = field(default_factory=list, kw_only=True)
-    # """The history of the agent self's chat messages."""
-    memory: AgentMemory = field(default_factory=AgentMemory, kw_only=True)
-    """The memory of the agent."""
+    _memory: AgentMemory | None = field(default=None, init=False)
 
     def __post_init__(self):
         self.logger = logger.bind(agent=self)
@@ -67,6 +61,13 @@ class Agent:
             scene_summary_system_template=config.scene_summary_system_template,
             scene_summary_user_template=config.scene_summary_user_template,
         )
+
+    @property
+    def memory(self) -> AgentMemory:
+        """The memory of the agent."""
+        if self._memory is None:
+            raise TimelineNotStarted("The timeline has not been started.")
+        return self._memory
 
     async def _act_precheck(self, timeline: "Timeline") -> None:
         """Check if the agent needs to summarize the scene before acting."""
@@ -218,3 +219,15 @@ class Agent:
             self.memory.remember(
                 AgentEventSummary(scene=scene, content=summary_message)
             )
+
+    async def __aenter__(self) -> Self:
+        self._memory = AgentMemory()
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
+        self._memory = None

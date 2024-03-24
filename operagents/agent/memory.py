@@ -56,17 +56,17 @@ AgentEvent: TypeAlias = Annotated[
 
 class AgentMemory:
     def __init__(self) -> None:
-        self.memory: list[AgentEvent] = []
-        """The memory of the agent."""
+        self.events: list[AgentEvent] = []
+        """Memorized events of the agent."""
 
     def last_remembered_scene(self) -> "Scene | None":
         """Get the last remembered scene."""
-        return self.memory[-1].scene if self.memory else None
+        return self.events[-1].scene if self.events else None
 
     def need_summary_scenes(self) -> list["Scene"]:
         """Get the scenes that need a summary."""
         result: dict[str, "Scene"] = {}
-        for event in self.memory:
+        for event in self.events:
             if event.type_ == "observe" or event.type_ == "act":
                 result[event.scene.name] = event.scene
             elif event.type_ == "scene_summary":
@@ -76,7 +76,7 @@ class AgentMemory:
     def summarized(self, scene: "Scene") -> bool:
         return any(
             event.type_ == "scene_summary" and event.scene.name == scene.name
-            for event in self.memory
+            for event in self.events
         )
 
     def remember(self, event: AgentEvent) -> None:
@@ -85,13 +85,13 @@ class AgentMemory:
             event.scene
         ):
             raise SceneFinished()
-        self.memory.append(event)
+        self.events.append(event)
 
     def get_memory(self, timeline: "Timeline") -> list[AgentEvent]:
         """Get the agent memory for acting in the current scene."""
 
         result: list[AgentEvent] = []
-        for event in self.memory:
+        for event in self.events:
             if event.type_ == "observe" or event.type_ == "act":
                 if event.scene.name != timeline.current_scene.name:
                     # if the event is from past scene,
@@ -104,4 +104,4 @@ class AgentMemory:
 
     def get_memory_for_scene(self, scene: "Scene") -> list[AgentEvent]:
         """Get the agent memory for acting in the given scene."""
-        return [event for event in self.memory if event.scene.name == scene.name]
+        return [event for event in self.events if event.scene.name == scene.name]
