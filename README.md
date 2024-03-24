@@ -85,7 +85,7 @@ agents:
   Mike:
     backend:
       type: custom
-      class_path: module_name:CustomBackend
+      path: module_name:CustomBackend
       custom_config: value
 ```
 
@@ -246,7 +246,7 @@ The `Flow` of the scene is designed to control the order of the characters' acti
      talking:
        flow:
          type: custom
-         class_path: module_name:CustomFlow
+         path: module_name:CustomFlow
          custom_config: value
    ```
 
@@ -318,6 +318,38 @@ The `Director` of the scene is used to control the next scene to play. You can s
          type: never
    ```
 
+4. `custom` type
+
+   The `custom` type allows you to define a custom director class to control the next scene to play.
+
+   ```yaml
+   scenes:
+     talking:
+       director:
+         type: custom
+         path: module_name:CustomDirector
+         custom_config: value
+   ```
+
+   ```python
+   # module_name.py
+
+   from typing import Self
+
+   from operagents.scene import Scene
+   from operagents.director import Director
+   from operagents.timeline import Timeline
+   from operagents.config import CustomDirectorConfig
+
+   class CustomDirector(Director):
+       @classmethod
+       def from_config(cls, config: CustomDirectorConfig) -> Self:
+           return cls()
+
+       async def next_scene(self, timeline: Timeline) -> Scene | None:
+           return None
+   ```
+
 ### The Prop config
 
 The characters in the scene can use props to improve there acting. The `props` section is a list of props, where each prop is a dictionary with the prop type and the prop config.
@@ -367,7 +399,7 @@ The characters in the scene can use props to improve there acting. The `props` s
          ai assistant:
            props:
              - type: custom
-               class_path: module_name:CustomProp
+               path: module_name:CustomProp
                custom_config: value
    ```
 
