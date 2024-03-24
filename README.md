@@ -76,6 +76,8 @@ agents:
       type: openai
       model: gpt-3.5-turbo-16k-0613
       temperature: 0.5
+      api_key:
+      base_url:
 ```
 
 You can also customize the backend by providing a object path of the custom backend class that implements the `Backend` abstract class.:

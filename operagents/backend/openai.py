@@ -27,10 +27,17 @@ if TYPE_CHECKING:
 class OpenAIBackend(Backend):
     type_ = "openai"
 
-    def __init__(self, model: str, temperature: float | None = None) -> None:
+    def __init__(
+        self,
+        model: str,
+        temperature: float | None = None,
+        *,
+        api_key: str | None = None,
+        base_url: str | None = None,
+    ) -> None:
         super().__init__()
 
-        self.client = openai.AsyncOpenAI()
+        self.client = openai.AsyncOpenAI(api_key=api_key, base_url=base_url)
         self.model: str = model
         self.temperature: float | None = temperature
 
@@ -39,7 +46,12 @@ class OpenAIBackend(Backend):
     def from_config(  # pyright: ignore[reportIncompatibleMethodOverride]
         cls, config: OpenaiBackendConfig
     ) -> Self:
-        return cls(model=config.model, temperature=config.temperature)
+        return cls(
+            model=config.model,
+            temperature=config.temperature,
+            api_key=config.api_key,
+            base_url=config.base_url,
+        )
 
     async def _use_prop(self, prop: Prop, args: str) -> str:
         if prop.params is None:
