@@ -8,6 +8,7 @@ from operagents.log import logger
 from operagents.exception import TimelineNotStarted
 
 from .event import TimelineEvent as TimelineEvent
+from .event import TimelineEventAct, TimelineEventSceneEnd, TimelineEventSceneStart
 
 if TYPE_CHECKING:
     from operagents.agent import Agent
@@ -80,30 +81,41 @@ class Timeline:
             event for event in self.events if event.scene.name == scene.name
         ]
         for i in range(-1, -len(scene_events) - 1, -1):
-            if scene_events[i].character.agent_name == agent.name:
+            if (
+                isinstance(event := scene_events[i], TimelineEventAct)
+                and event.character.agent_name == agent.name
+            ):
                 return scene_events[i + 1 :]
         return scene_events
 
-    async def begin_character(self) -> "Character":
+    async def _begin_character(self) -> "Character":
         """Get the first character to act in the scene."""
         return await self.current_scene.flow.begin(self)
 
-    async def next_character(self) -> "Character":
+    async def _next_character(self) -> "Character":
         """Get the next character to act in the scene."""
         return await self.current_scene.flow.next(self)
 
-    async def character_act(self) -> None:
+    async def _character_act(self) -> None:
         """Make the current character act in the scene."""
         event = await self.current_character.act(self)
         self.events.append(event)
 
-    async def next_scene(self) -> "Scene | None":
+    async def _next_scene(self) -> "Scene | None":
         """Get the next scene."""
         return await self.current_scene.director.next_scene(self)
 
-    async def prepare_scene(self) -> None:
+    async def _prepare_scene(self) -> None:
         """Prepare the current scene."""
         await self.current_scene.prepare(self)
+
+    async def _switch_scene(self, scene: "Scene") -> None:
+        """Switch to the specified scene."""
+        if self._current_scene is not None:
+            self.events.append(TimelineEventSceneEnd(scene=self.current_scene))
+        self._current_scene = scene
+        self.events.append(TimelineEventSceneStart(scene=scene))
+        await self._prepare_scene()
 
     async def next_time(self) -> None:
         """Go to the next character or scene."""
@@ -112,21 +124,20 @@ class Timeline:
             scene=self.current_scene,
             current_character=self.current_character,
         )
-        await self.character_act()
-        if next_scene := await self.next_scene():
+        await self._character_act()
+        if next_scene := await self._next_scene():
             # change to next scene
             logger.info(
                 "Next scene: {next_scene}",
                 scene=self.current_scene,
                 next_scene=next_scene,
             )
-            self._current_scene = next_scene
-            await self.prepare_scene()
+            await self._switch_scene(next_scene)
 
-            self._current_character = await self.begin_character()
+            self._current_character = await self._begin_character()
         else:
             # continue current scene with next character
-            self._current_character = await self.next_character()
+            self._current_character = await self._next_character()
             logger.debug(
                 "Next character: {next_character.name}",
                 scene=self.current_scene,
@@ -140,14 +151,14 @@ class Timeline:
         for agent in self.opera.agents.values():
             await self._exit_stack.enter_async_context(agent)
 
-        self._current_scene = self.opera.scenes[self.opera.opening_scene]
+        opening_scene = self.opera.scenes[self.opera.opening_scene]
         logger.debug(
             "Timeline starts with opening scene {opening_scene.name}.",
-            opening_scene=self.current_scene,
+            opening_scene=opening_scene,
         )
-        await self.prepare_scene()
+        await self._switch_scene(opening_scene)
 
-        self._current_character = await self.begin_character()
+        self._current_character = await self._begin_character()
         return self
 
     async def __aexit__(

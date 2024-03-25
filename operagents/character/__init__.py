@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from operagents.prop import Prop
     from operagents.agent import Agent
     from operagents.timeline import Timeline
-    from operagents.timeline.event import TimelineEvent
+    from operagents.timeline.event import TimelineEventAct
 
 
 @dataclass(eq=False)
@@ -35,12 +35,12 @@ class Character:
     def get_agent(self, timeline: "Timeline") -> "Agent":
         return timeline.opera.agents[self.agent_name]
 
-    async def act(self, timeline: "Timeline") -> "TimelineEvent":
+    async def act(self, timeline: "Timeline") -> "TimelineEventAct":
         agent = self.get_agent(timeline)
         return await agent.act(timeline)
 
     async def fake_act(
         self, timeline: "Timeline", response: str, do_observe: bool = True
-    ) -> "TimelineEvent":
+    ) -> "TimelineEventAct":
         agent = self.get_agent(timeline)
         return await agent.fake_act(timeline, response, do_observe=do_observe)

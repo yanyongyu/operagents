@@ -16,7 +16,6 @@ from .memory import AgentMemory, AgentEventAct, AgentEventObserve, AgentEventSum
 if TYPE_CHECKING:
     from operagents.timeline import Timeline
     from operagents.backend import Backend, Message
-    from operagents.timeline.event import TimelineEvent
 
 
 @dataclass(eq=False)
@@ -114,7 +113,7 @@ class Agent:
 
     async def fake_act(
         self, timeline: "Timeline", response: str, do_observe: bool = True
-    ) -> "TimelineEvent":
+    ) -> TimelineEventAct:
         """Make the agent act with a given response."""
 
         await self._act_precheck(timeline)
@@ -143,7 +142,7 @@ class Agent:
             content=response,
         )
 
-    async def act(self, timeline: "Timeline") -> "TimelineEvent":
+    async def act(self, timeline: "Timeline") -> TimelineEventAct:
         """Make the agent act."""
 
         await self._act_precheck(timeline)
