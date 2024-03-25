@@ -29,7 +29,7 @@ class PrefaceScenePrepare(ScenePrepare):
     @override
     async def prepare(self, timeline: "Timeline"):
         character = timeline.current_scene.characters[self.character_name]
-        timeline._current_character = character
+        await timeline._switch_character(character)
         # do not observe if the character is the first to act
         event = await character.fake_act(
             timeline, self.content, do_observe=timeline.current_act_num != 0

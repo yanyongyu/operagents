@@ -1,3 +1,4 @@
+from uuid import UUID
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal, Annotated, TypeAlias
 
@@ -19,6 +20,7 @@ class AgentEventObserve:
     """
 
     type_: Literal["observe"] = "observe"
+    context_id: UUID
     scene: "Scene"
     content: str
 
@@ -35,6 +37,7 @@ class AgentEventSummary:
     """
 
     type_: Literal["scene_summary"] = "scene_summary"
+    context_id: UUID
     scene: "Scene"
     content: str
 
@@ -44,6 +47,7 @@ class AgentEventAct:
     """Agent self acts."""
 
     type_: Literal["act"] = "act"
+    context_id: UUID
     scene: "Scene"
     character: "Character"
     content: str
@@ -59,19 +63,15 @@ class AgentMemory:
         self.events: list[AgentEvent] = []
         """Memorized events of the agent."""
 
-    def last_remembered_scene(self) -> "Scene | None":
-        """Get the last remembered scene."""
-        return self.events[-1].scene if self.events else None
-
-    def need_summary_scenes(self) -> list["Scene"]:
+    def need_summary_contexts(self) -> list[UUID]:
         """Get the scenes that need a summary."""
-        result: dict[str, "Scene"] = {}
+        result: set[UUID] = set()
         for event in self.events:
             if event.type_ == "observe" or event.type_ == "act":
-                result[event.scene.name] = event.scene
+                result.add(event.context_id)
             elif event.type_ == "scene_summary":
-                result.pop(event.scene.name, None)
-        return list(result.values())
+                result.discard(event.context_id)
+        return list(result)
 
     def summarized(self, scene: "Scene") -> bool:
         return any(
@@ -102,6 +102,6 @@ class AgentMemory:
                 result.append(event)
         return result
 
-    def get_memory_for_scene(self, scene: "Scene") -> list[AgentEvent]:
-        """Get the agent memory for acting in the given scene."""
-        return [event for event in self.events if event.scene.name == scene.name]
+    def get_memory_for_context(self, context_id: UUID) -> list[AgentEvent]:
+        """Get the agent memory for acting in the given scene context."""
+        return [event for event in self.events if event.context_id == context_id]

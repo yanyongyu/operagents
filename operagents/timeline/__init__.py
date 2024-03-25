@@ -1,11 +1,13 @@
 import weakref
+from uuid import UUID, uuid4
 from types import TracebackType
 from typing import TYPE_CHECKING
+from dataclasses import dataclass
 from typing_extensions import Self
 from contextlib import AsyncExitStack
 
 from operagents.log import logger
-from operagents.exception import TimelineNotStarted
+from operagents.exception import SceneNotPrepared, TimelineNotStarted
 
 from .event import TimelineEvent as TimelineEvent
 from .event import TimelineEventAct, TimelineEventSceneEnd, TimelineEventSceneStart
@@ -17,15 +19,25 @@ if TYPE_CHECKING:
     from operagents.character import Character
 
 
+@dataclass(eq=False, kw_only=True)
+class TimelineContext:
+    id_: UUID
+    """Unique identifier for the context."""
+    scene: "Scene"
+    """Scene in the context."""
+    character: "Character | None"
+    """Character in the context."""
+
+
 class Timeline:
 
     def __init__(self, opera: "Opera") -> None:
         self._opera_ref = weakref.ref(opera)
 
         self._events: list[TimelineEvent] | None = None
-        self._current_scene: "Scene | None" = None
-        self._current_character: "Character | None" = None
         self._exit_stack: AsyncExitStack | None = None
+
+        self._current_context: TimelineContext | None = None
 
     @property
     def opera(self) -> "Opera":
@@ -43,50 +55,60 @@ class Timeline:
         return self._events
 
     @property
+    def current_context(self) -> TimelineContext:
+        """The current context."""
+        if self._current_context is None:
+            raise TimelineNotStarted("The timeline has not been started.")
+        return self._current_context
+
+    @property
+    def current_context_id(self) -> UUID:
+        """The current context's ID."""
+        return self.current_context.id_
+
+    @property
     def current_scene(self) -> "Scene":
         """The current scene."""
-        if self._current_scene is None:
-            raise TimelineNotStarted("The timeline has not been started.")
-        return self._current_scene
+        return self.current_context.scene
 
     @property
     def current_character(self) -> "Character":
         """The current character."""
-        if self._current_character is None:
-            raise TimelineNotStarted("The timeline has not been started.")
-        return self._current_character
+        if (character := self.current_context.character) is None:
+            raise SceneNotPrepared("The scene has not been prepared.")
+        return character
 
     @property
     def current_act_num(self) -> int:
-        """The number of acts in the current scene."""
-        return self.act_num_in_scene(self.current_scene)
+        """The number of acts in the current scene context."""
+        return self.act_num_in_context(self.current_context_id)
 
-    def scene_events(self, scene: "Scene") -> list[TimelineEvent]:
-        """Get the events in the scene."""
-        return [event for event in self.events if event.scene.name == scene.name]
+    def context_events(self, context_id: UUID) -> list[TimelineEvent]:
+        """Get the events in the scene context."""
+        return [event for event in self.events if event.context_id == context_id]
 
-    def act_num_in_scene(self, scene: "Scene") -> int:
-        """Get the number of acts in the scene."""
-        return sum(1 for event in self.scene_events(scene) if event.type_ == "act")
+    def act_num_in_context(self, context_id: UUID) -> int:
+        """Get the number of acts in the scene context."""
+        return sum(
+            1 for event in self.context_events(context_id) if event.type_ == "act"
+        )
 
     def past_events(self, agent: "Agent") -> list[TimelineEvent]:
-        """Get the events since the last time the agent acted in current scene."""
-        return self.past_events_in_scene(agent, self.current_scene)
+        """Events since the last time the agent acted in current scene context."""
+        return self.past_events_in_context(agent, self.current_context_id)
 
-    def past_events_in_scene(
-        self, agent: "Agent", scene: "Scene"
+    def past_events_in_context(
+        self, agent: "Agent", context_id: UUID
     ) -> list[TimelineEvent]:
-        """Get the events since the last time the agent acted in the scene."""
-        scene_events = [
-            event for event in self.events if event.scene.name == scene.name
-        ]
-        for i in range(-1, -len(scene_events) - 1, -1):
+        """Events since the last time the agent acted in the scene context."""
+        context_events = self.context_events(context_id)
+        for i in range(-1, -len(context_events) - 1, -1):
             if (
-                isinstance(event := scene_events[i], TimelineEventAct)
+                isinstance(event := context_events[i], TimelineEventAct)
                 and event.character.agent_name == agent.name
             ):
-                return scene_events[i + 1 :]
-        return scene_events
+                return context_events[i + 1 :]
+        return context_events
 
     async def _begin_character(self) -> "Character":
         """Get the first character to act in the scene."""
@@ -110,12 +132,24 @@ class Timeline:
         await self.current_scene.prepare(self)
 
     async def _switch_scene(self, scene: "Scene") -> None:
-        """Switch to the specified scene."""
-        if self._current_scene is not None:
-            self.events.append(TimelineEventSceneEnd(scene=self.current_scene))
-        self._current_scene = scene
-        self.events.append(TimelineEventSceneStart(scene=scene))
+        """Switch to the specified scene context."""
+        if self._current_context is not None:
+            self.events.append(
+                TimelineEventSceneEnd(
+                    context_id=self.current_context_id, scene=self.current_scene
+                )
+            )
+        self._current_context = TimelineContext(
+            id_=uuid4(), scene=scene, character=None
+        )
+        self.events.append(
+            TimelineEventSceneStart(context_id=self.current_context_id, scene=scene)
+        )
         await self._prepare_scene()
+
+    async def _switch_character(self, character: "Character") -> None:
+        """Switch to the specified character in the scene context."""
+        self.current_context.character = character
 
     async def next_time(self) -> None:
         """Go to the next character or scene."""
@@ -128,16 +162,16 @@ class Timeline:
         if next_scene := await self._next_scene():
             # change to next scene
             logger.info(
-                "Next scene: {next_scene}",
+                "Next scene: {next_scene}.",
                 scene=self.current_scene,
                 next_scene=next_scene,
             )
             await self._switch_scene(next_scene)
 
-            self._current_character = await self._begin_character()
+            await self._switch_character(await self._begin_character())
         else:
             # continue current scene with next character
-            self._current_character = await self._next_character()
+            await self._switch_character(await self._next_character())
             logger.debug(
                 "Next character: {next_character.name}",
                 scene=self.current_scene,
@@ -157,8 +191,7 @@ class Timeline:
             opening_scene=opening_scene,
         )
         await self._switch_scene(opening_scene)
-
-        self._current_character = await self._begin_character()
+        await self._switch_character(await self._begin_character())
         return self
 
     async def __aexit__(

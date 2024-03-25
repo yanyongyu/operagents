@@ -7,8 +7,8 @@ from operagents import backend
 from operagents.log import logger
 from operagents.utils import get_template_renderer
 from operagents.exception import TimelineNotStarted
-from operagents.timeline.event import TimelineEventAct
 from operagents.config import AgentConfig, TemplateConfig
+from operagents.timeline.event import TimelineEventAct, TimelineEventSceneEnd
 
 from .memory import AgentEvent as AgentEvent
 from .memory import AgentMemory, AgentEventAct, AgentEventObserve, AgentEventSummary
@@ -70,10 +70,7 @@ class Agent:
 
     async def _act_precheck(self, timeline: "Timeline") -> None:
         """Check if the agent needs to summarize the scene before acting."""
-        if (
-            scene := self.memory.last_remembered_scene()
-        ) and scene.name != timeline.current_scene.name:
-            await self.summary(timeline)
+        await self.summary(timeline)
 
     def _memory_to_message(self, memory_event: AgentEvent) -> "Message":
         """Convert an agent memory event to a message."""
@@ -94,7 +91,11 @@ class Agent:
     def _do_observe(self, timeline: "Timeline", message: str) -> None:
         """Make the agent observe a message."""
         self.memory.remember(
-            AgentEventObserve(scene=timeline.current_scene, content=message)
+            AgentEventObserve(
+                context_id=timeline.current_context_id,
+                scene=timeline.current_scene,
+                content=message,
+            )
         )
 
     def _do_response(self, timeline: "Timeline", response: str) -> None:
@@ -105,6 +106,7 @@ class Agent:
 
         self.memory.remember(
             AgentEventAct(
+                context_id=timeline.current_context_id,
                 scene=timeline.current_scene,
                 character=timeline.current_character,
                 content=response,
@@ -137,8 +139,9 @@ class Agent:
         self._do_response(timeline, response)
 
         return TimelineEventAct(
-            character=timeline.current_character,
+            context_id=timeline.current_context_id,
             scene=timeline.current_scene,
+            character=timeline.current_character,
             content=response,
         )
 
@@ -180,23 +183,33 @@ class Agent:
         self._do_response(timeline, response)
 
         return TimelineEventAct(
-            character=timeline.current_character,
+            context_id=timeline.current_context_id,
             scene=timeline.current_scene,
+            character=timeline.current_character,
             content=response,
         )
 
     async def summary(self, timeline: "Timeline") -> None:
-        """Make the agent summarize the scene."""
-        need_summary_scenes = self.memory.need_summary_scenes()
-        for scene in need_summary_scenes:
+        """Make the agent summarize the scene contexts."""
+        need_summary_contexts = self.memory.need_summary_contexts()
+        ended_contexts = {
+            event.context_id: event.scene
+            for event in timeline.events
+            if isinstance(event, TimelineEventSceneEnd)
+        }
+        for context_id in need_summary_contexts:
+            if context_id not in ended_contexts:
+                continue
+
+            scene = ended_contexts[context_id]
             system_message = (
                 await self.scene_summary_system_renderer.render_async(
-                    agent=self, timeline=timeline, scene=scene
+                    agent=self, timeline=timeline, context_id=context_id, scene=scene
                 )
             ).strip()
             summary_message = (
                 await self.scene_summary_user_renderer.render_async(
-                    agent=self, timeline=timeline, scene=scene
+                    agent=self, timeline=timeline, context_id=context_id, scene=scene
                 )
             ).strip()
             messages: list["Message"] = [
@@ -210,13 +223,23 @@ class Agent:
                 },
             ]
             self.logger.debug(
-                "Summarizing with messages: {messages}", scene=scene, messages=messages
+                "Summarizing with messages: {messages}",
+                context_id=context_id,
+                scene=scene,
+                messages=messages,
             )
             response = await self.backend.generate(messages)
-            self.logger.debug("Summary: {response}", scene=scene, response=response)
+            self.logger.debug(
+                "Summary: {response}",
+                context_id=context_id,
+                scene=scene,
+                response=response,
+            )
 
             self.memory.remember(
-                AgentEventSummary(scene=scene, content=summary_message)
+                AgentEventSummary(
+                    context_id=context_id, scene=scene, content=summary_message
+                )
             )
 
     async def __aenter__(self) -> Self:

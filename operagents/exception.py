@@ -10,6 +10,13 @@ class TimelineNotStarted(OperagentsException):
     """Raised when the timeline has not been started"""
 
 
+class SceneNotPrepared(OperagentsException):
+    """Raised when the scene has not been prepared.
+
+    Characters can not act in a scene that has not been prepared.
+    """
+
+
 class SceneFinished(OperagentsException):
     """Raised when the scene has already finished.
 

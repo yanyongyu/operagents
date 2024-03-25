@@ -1,3 +1,4 @@
+from uuid import UUID
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal, Annotated, TypeAlias
 
@@ -11,6 +12,7 @@ if TYPE_CHECKING:
 @dataclass(eq=False, kw_only=True)
 class TimelineEventAct:
     type_: Literal["act"] = "act"
+    context_id: UUID
     scene: "Scene"
     character: "Character"
     content: str
@@ -19,12 +21,14 @@ class TimelineEventAct:
 @dataclass(eq=False, kw_only=True)
 class TimelineEventSceneStart:
     type_: Literal["scene_start"] = "scene_start"
+    context_id: UUID
     scene: "Scene"
 
 
 @dataclass(eq=False, kw_only=True)
 class TimelineEventSceneEnd:
     type_: Literal["scene_end"] = "scene_end"
+    context_id: UUID
     scene: "Scene"
 
 
