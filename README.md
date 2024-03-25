@@ -352,6 +352,76 @@ The `Director` of the scene is used to control the next scene to play. You can s
            return None
    ```
 
+The `prepare` section of the scene is used to defined the preparation steps before the scene starts. You can do some initialization work here.
+
+1. `preface` type
+
+   You can make the character say something before the scene starts.
+
+   ```yaml
+   scenes:
+     talking:
+       prepare:
+         - type: preface
+           character_name: ai assistant
+           content: |-
+             Hello, I am John, your AI assistant. How can I help you today?
+   ```
+
+2. `function` type
+
+   The `function` type will call the custom function before the scene starts.
+
+   ```yaml
+   scenes:
+     talking:
+       prepare:
+         - type: function
+           function: module_name:function_name
+   ```
+
+   The custom function will receive one parameter of type `operagents.timeline.Timeline`.
+
+   ```python
+   # module_name.py
+
+   from operagents.timeline import Timeline
+
+   async def function_name(timeline: Timeline) -> None:
+       pass
+   ```
+
+3. `custom` type
+
+   The `custom` type will call the custom prepare class before the scene starts.
+
+   ```yaml
+   scenes:
+     talking:
+       prepare:
+         - type: custom
+           path: module_name:CustomPrepare
+           custom_config: value
+   ```
+
+   ```python
+   # module_name.py
+
+   from typing import Self
+
+   from operagents.timeline import Timeline
+   from operagents.scene.prepare import ScenePrepare
+   from operagents.config import CustomScenePrepareConfig
+
+   class CustomScenePrepare(ScenePrepare):
+       @classmethod
+       def from_config(cls, config: CustomScenePrepareConfig) -> Self:
+           return cls()
+
+       async def prepare(self, timeline: Timeline) -> None:
+           pass
+   ```
+
 ### The Prop config
 
 The characters in the scene can use props to improve there acting. The `props` section is a list of props, where each prop is a dictionary with the prop type and the prop config.
