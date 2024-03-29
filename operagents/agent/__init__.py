@@ -8,10 +8,15 @@ from operagents.log import logger
 from operagents.utils import get_template_renderer
 from operagents.exception import TimelineNotStarted
 from operagents.config import AgentConfig, TemplateConfig
-from operagents.timeline.event import TimelineEventAct, TimelineEventSceneEnd
+from operagents.timeline.event import TimelineEventAct, TimelineEventSessionEnd
 
 from .memory import AgentEvent as AgentEvent
-from .memory import AgentMemory, AgentEventAct, AgentEventObserve, AgentEventSummary
+from .memory import (
+    AgentMemory,
+    AgentEventAct,
+    AgentEventObserve,
+    AgentEventSessionSummary,
+)
 
 if TYPE_CHECKING:
     from operagents.timeline import Timeline
@@ -31,9 +36,9 @@ class Agent:
     user_template: TemplateConfig = field(kw_only=True)
     """The user template to use for generating text."""
 
-    scene_summary_system_template: TemplateConfig = field(kw_only=True)
+    session_summary_system_template: TemplateConfig = field(kw_only=True)
     """The scene summary system template to use for generating summary."""
-    scene_summary_user_template: TemplateConfig = field(kw_only=True)
+    session_summary_user_template: TemplateConfig = field(kw_only=True)
     """The scene summary user template to use for generating summary."""
 
     _memory: AgentMemory | None = field(default=None, init=False)
@@ -42,11 +47,11 @@ class Agent:
         self.logger = logger.bind(agent=self)
         self.system_renderer = get_template_renderer(self.system_template)
         self.user_renderer = get_template_renderer(self.user_template)
-        self.scene_summary_system_renderer = get_template_renderer(
-            self.scene_summary_system_template
+        self.session_summary_system_renderer = get_template_renderer(
+            self.session_summary_system_template
         )
-        self.scene_summary_user_renderer = get_template_renderer(
-            self.scene_summary_user_template
+        self.session_summary_user_renderer = get_template_renderer(
+            self.session_summary_user_template
         )
 
     @classmethod
@@ -57,8 +62,8 @@ class Agent:
             backend=backend.from_config(config.backend),
             system_template=config.system_template,
             user_template=config.user_template,
-            scene_summary_system_template=config.scene_summary_system_template,
-            scene_summary_user_template=config.scene_summary_user_template,
+            session_summary_system_template=config.session_summary_system_template,
+            session_summary_user_template=config.session_summary_user_template,
         )
 
     @property
@@ -74,12 +79,12 @@ class Agent:
 
     def _memory_to_message(self, memory_event: AgentEvent) -> "Message":
         """Convert an agent memory event to a message."""
-        if memory_event.type_ == "observe" or memory_event.type_ == "scene_summary":
+        if isinstance(memory_event, AgentEventObserve | AgentEventSessionSummary):
             return {
                 "role": "user",
                 "content": memory_event.content,
             }
-        elif memory_event.type_ == "act":
+        elif isinstance(memory_event, AgentEventAct):
             return {
                 "role": "assistant",
                 "content": memory_event.content,
@@ -92,7 +97,7 @@ class Agent:
         """Make the agent observe a message."""
         self.memory.remember(
             AgentEventObserve(
-                context_id=timeline.current_context_id,
+                session_id=timeline.current_session_id,
                 scene=timeline.current_scene,
                 content=message,
             )
@@ -106,7 +111,7 @@ class Agent:
 
         self.memory.remember(
             AgentEventAct(
-                context_id=timeline.current_context_id,
+                session_id=timeline.current_session_id,
                 scene=timeline.current_scene,
                 character=timeline.current_character,
                 content=response,
@@ -139,7 +144,7 @@ class Agent:
         self._do_response(timeline, response)
 
         return TimelineEventAct(
-            context_id=timeline.current_context_id,
+            session_id=timeline.current_session_id,
             scene=timeline.current_scene,
             character=timeline.current_character,
             content=response,
@@ -183,33 +188,33 @@ class Agent:
         self._do_response(timeline, response)
 
         return TimelineEventAct(
-            context_id=timeline.current_context_id,
+            session_id=timeline.current_session_id,
             scene=timeline.current_scene,
             character=timeline.current_character,
             content=response,
         )
 
     async def summary(self, timeline: "Timeline") -> None:
-        """Make the agent summarize the scene contexts."""
-        need_summary_contexts = self.memory.need_summary_contexts()
-        ended_contexts = {
-            event.context_id: event.scene
+        """Make the agent summarize the scene sessions."""
+        need_summary_sessions = self.memory.need_summary_sessions()
+        ended_sessions = {
+            event.session_id: event.scene
             for event in timeline.events
-            if isinstance(event, TimelineEventSceneEnd)
+            if isinstance(event, TimelineEventSessionEnd)
         }
-        for context_id in need_summary_contexts:
-            if context_id not in ended_contexts:
+        for session_id in need_summary_sessions:
+            if session_id not in ended_sessions:
                 continue
 
-            scene = ended_contexts[context_id]
+            scene = ended_sessions[session_id]
             system_message = (
-                await self.scene_summary_system_renderer.render_async(
-                    agent=self, timeline=timeline, context_id=context_id, scene=scene
+                await self.session_summary_system_renderer.render_async(
+                    agent=self, timeline=timeline, session_id=session_id, scene=scene
                 )
             ).strip()
             summary_message = (
-                await self.scene_summary_user_renderer.render_async(
-                    agent=self, timeline=timeline, context_id=context_id, scene=scene
+                await self.session_summary_user_renderer.render_async(
+                    agent=self, timeline=timeline, session_id=session_id, scene=scene
                 )
             ).strip()
             messages: list["Message"] = [
@@ -224,21 +229,21 @@ class Agent:
             ]
             self.logger.debug(
                 "Summarizing with messages: {messages}",
-                context_id=context_id,
+                session_id=session_id,
                 scene=scene,
                 messages=messages,
             )
             response = await self.backend.generate(messages)
             self.logger.debug(
                 "Summary: {response}",
-                context_id=context_id,
+                session_id=session_id,
                 scene=scene,
                 response=response,
             )
 
             self.memory.remember(
-                AgentEventSummary(
-                    context_id=context_id, scene=scene, content=summary_message
+                AgentEventSessionSummary(
+                    session_id=session_id, scene=scene, content=summary_message
                 )
             )
 

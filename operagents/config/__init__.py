@@ -4,8 +4,8 @@ from typing import Literal, Annotated, TypeAlias
 from pydantic import Field, BaseModel, ConfigDict, field_validator, model_validator
 
 from .const import (
-    AGENT_SCENE_SUMMARY_USER_TEMPLATE,
-    AGENT_SCENE_SUMMARY_SYSTEM_TEMPLATE,
+    AGENT_SESSION_SUMMARY_USER_TEMPLATE,
+    AGENT_SESSION_SUMMARY_SYSTEM_TEMPLATE,
 )
 
 
@@ -50,8 +50,10 @@ class AgentConfig(BaseModel):
     backend: BackendConfig
     system_template: TemplateConfig
     user_template: TemplateConfig
-    scene_summary_system_template: TemplateConfig = AGENT_SCENE_SUMMARY_SYSTEM_TEMPLATE
-    scene_summary_user_template: TemplateConfig = AGENT_SCENE_SUMMARY_USER_TEMPLATE
+    session_summary_system_template: TemplateConfig = (
+        AGENT_SESSION_SUMMARY_SYSTEM_TEMPLATE
+    )
+    session_summary_user_template: TemplateConfig = AGENT_SESSION_SUMMARY_USER_TEMPLATE
 
 
 class PrefaceScenePrepareConfig(BaseModel):

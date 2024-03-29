@@ -61,7 +61,7 @@ scenes:
         You are the director of the scene.
       user_template: |-
         Here is the chat history:
-        {% for event in timeline.context_events(timeline.current_context_id) -%}
+        {% for event in timeline.session_events(timeline.current_session_id) -%}
         {% if event.type_ == "act" -%}
         {{ event.character.agent_name }}({{ event.character.name }}): {{ event.content }}
         {%- endif %}

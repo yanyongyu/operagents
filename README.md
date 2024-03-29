@@ -14,6 +14,40 @@ pdm add operagents
 uv pip install operagents
 ```
 
+## Concepts
+
+### Agent
+
+An agent is a human or a language model that can act as [characters](#character) and use [props](#prop) in the opera scenes. The agent can communicate with others by observing and acting. Every agent has a backend (e.g. user, openai api) to generate the response and own memory to store the long-term / short-term information.
+
+### Scene
+
+A scene is a part of the opera that contains a number of [characters](#character). Every scene has a [flow](#flow) and a [director](#director) to control the whole [session](#session) process. The scene can also have a prepare section to do some initialization work before the scene starts.
+
+### Character
+
+A character is a role in the [scene](#scene). Every character has a name, a description, and a list of [props](#prop). When the scene starts, an agent will act as the character and communicate with others.
+
+### Flow
+
+The flow is used to control the order of the characters' acting in the [scene](#scene).
+
+### Director
+
+The director is used to decide whether to end the current scene and which scene to play next.
+
+### Prop
+
+A prop is a tool that can be used by the [agents](#agent) to improve their acting. Agents can get external information by using props.
+
+### Timeline
+
+The timeline is the main runtime component of the opera to manage the [session](#session) process. It runs the current session and switches between sessions. The timeline also records the global information of the opera, and can be shared by all agents.
+
+### Session
+
+A session indicates a single run of the scene. It contains an unique identifier and its corresponding scene.
+
 ## Usage
 
 ### Start writing a config file
@@ -137,23 +171,23 @@ agents:
       {%- endfor %}
 ```
 
-Another part of the agent config is the scene summary system/user template, which is used to generate the summary of the scene. You can use the `scene_summary_system_template`/`scene_summary_user_template` key to specify the scene summary system/user template. Here is an example of the template config:
+Another part of the agent config is the session summary system/user template, which is used to generate the summary of the scene session. You can use the `session_summary_system_template`/`session_summary_user_template` key to specify the session summary system/user template. Here is an example of the template config:
 
 ```yaml
 agents:
   John:
-    scene_summary_system_template: |-
+    session_summary_system_template: |-
       Your name is {{ agent.name }}.
       Your task is to summarize the historical dialogue records according to the current scene, and summarize the most important information.
-    scene_summary_user_template: |-
-      {% for event in agent.memory.get_memory_for_scene(scene) -%}
+    session_summary_user_template: |-
+      {% for event in agent.memory.get_memory_for_session(session_id) -%}
       {% if event.type_ == "observe" -%}
       {{ event.content }}
       {%- elif event.type_ == "act" -%}
       {{ agent.name }}({{ event.character.name }}): {{ event.content }}
       {%- endif %}
       {%- endfor %}
-      {% for event in timeline.past_events_in_scene(agent, scene) -%}
+      {% for event in timeline.session_past_events(agent, session_id) -%}
       {% if event.type_ == "act" -%}
       {{ event.character.agent_name }}({{ event.character.name }}): {{ event.content }}
       {%- endif %}

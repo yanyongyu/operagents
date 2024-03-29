@@ -12,27 +12,27 @@ if TYPE_CHECKING:
 @dataclass(eq=False, kw_only=True)
 class TimelineEventAct:
     type_: Literal["act"] = "act"
-    context_id: UUID
+    session_id: UUID
     scene: "Scene"
     character: "Character"
     content: str
 
 
 @dataclass(eq=False, kw_only=True)
-class TimelineEventSceneStart:
-    type_: Literal["scene_start"] = "scene_start"
-    context_id: UUID
+class TimelineEventSessionStart:
+    type_: Literal["session_start"] = "session_start"
+    session_id: UUID
     scene: "Scene"
 
 
 @dataclass(eq=False, kw_only=True)
-class TimelineEventSceneEnd:
-    type_: Literal["scene_end"] = "scene_end"
-    context_id: UUID
+class TimelineEventSessionEnd:
+    type_: Literal["session_end"] = "session_end"
+    session_id: UUID
     scene: "Scene"
 
 
 TimelineEvent: TypeAlias = Annotated[
-    TimelineEventAct | TimelineEventSceneStart | TimelineEventSceneEnd,
+    TimelineEventAct | TimelineEventSessionStart | TimelineEventSessionEnd,
     Field(discriminator="type_"),
 ]
