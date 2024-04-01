@@ -112,6 +112,8 @@ agents:
       temperature: 0.5
       api_key:
       base_url:
+      prop_validation_error_template: |-
+        {# some jinja template #}
 ```
 
 You can also customize the backend by providing a object path of the custom backend class that implements the `Backend` abstract class.:
@@ -472,6 +474,8 @@ The characters in the scene can use props to improve there acting. The `props` s
            props:
              - type: function
                function: module_name:function_name
+               exception_template: |-
+                 {# some jinja template #}
    ```
 
    The custom function should has no arguments or one argument of type `pydantic.BaseModel`.
@@ -492,7 +496,7 @@ The characters in the scene can use props to improve there acting. The `props` s
        return f"Hello, {args.name}!"
    ```
 
-   Note that the function's name and docstring will be used as the prop's name and description. You can also provide the description of the args by pydantic's `Field`.
+   Note that the function's name and docstring will be used as the prop's name and description. You can also provide the description of the args by pydantic's `Field`. The exception template will be used to render response when the function raises an error.
 
 2. `custom` Prop
 
