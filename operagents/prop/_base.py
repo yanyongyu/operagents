@@ -11,11 +11,10 @@ from operagents.exception import OperaFinished
 Jsonable = str | int | float | bool | list["Jsonable"] | dict[str, "Jsonable"]
 
 P = TypeVar("P", bound=BaseModel, default=BaseModel)
-R = TypeVar("R", default=Any)
 
 
 # agent use prop to call functions
-class Prop(abc.ABC, Generic[P, R]):
+class Prop(abc.ABC, Generic[P]):
     """Prop is used by agents to access external functionality by calling functions."""
 
     type_: ClassVar[str]
@@ -39,7 +38,7 @@ class Prop(abc.ABC, Generic[P, R]):
     def from_config(cls, config: PropConfig) -> Self:
         raise NotImplementedError
 
-    async def use(self, params: P | None) -> R:
+    async def use(self, params: P | None) -> Any:
         """Use the prop to call functions."""
         logger.debug(
             "Using prop {prop.name} with params: {params!r}", prop=self, params=params
@@ -51,7 +50,7 @@ class Prop(abc.ABC, Generic[P, R]):
             # allow prop to end the opera
             raise
         except Exception:
-            logger.opt(exception=True).warning(
+            logger.opt(exception=True).error(
                 "Prop {prop.name} raised an exception", prop=self
             )
             raise
@@ -63,6 +62,6 @@ class Prop(abc.ABC, Generic[P, R]):
         return result
 
     @abc.abstractmethod
-    async def call(self, params: P | None) -> R:
+    async def call(self, params: P | None) -> Any:
         """Call function with the given parameters."""
         raise NotImplementedError

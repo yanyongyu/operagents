@@ -4,9 +4,19 @@ from typing import Literal, Annotated, TypeAlias
 from pydantic import Field, BaseModel, ConfigDict, field_validator, model_validator
 
 from .const import (
+    FUNCTION_PROP_EXCEPTION_TEMPLATE,
     AGENT_SESSION_SUMMARY_USER_TEMPLATE,
     AGENT_SESSION_SUMMARY_SYSTEM_TEMPLATE,
+    OPENAI_BACKEND_PROP_VALIDATION_ERROR_TEMPLATE,
 )
+
+
+class CustomTemplateConfig(BaseModel):
+    content: str
+    custom_functions: dict[str, str] = Field(default_factory=dict)
+
+
+TemplateConfig: TypeAlias = str | CustomTemplateConfig
 
 
 class OpenaiBackendConfig(BaseModel):
@@ -17,6 +27,9 @@ class OpenaiBackendConfig(BaseModel):
     temperature: float | None = None
     api_key: str | None = None
     base_url: str | None = None
+    prop_validation_error_template: TemplateConfig = (
+        OPENAI_BACKEND_PROP_VALIDATION_ERROR_TEMPLATE
+    )
 
 
 class UserBackendConfig(BaseModel):
@@ -36,14 +49,6 @@ BackendConfig: TypeAlias = Annotated[
     OpenaiBackendConfig | UserBackendConfig | CustomBackendConfig,
     Field(discriminator="type_"),
 ]
-
-
-class CustomTemplateConfig(BaseModel):
-    content: str
-    custom_functions: dict[str, str] = Field(default_factory=dict)
-
-
-TemplateConfig: TypeAlias = str | CustomTemplateConfig
 
 
 class AgentConfig(BaseModel):
@@ -89,6 +94,7 @@ class FunctionPropConfig(BaseModel):
 
     type_: Literal["function"] = Field(alias="type")
     function: str
+    exception_template: TemplateConfig = FUNCTION_PROP_EXCEPTION_TEMPLATE
 
 
 class CustomPropConfig(BaseModel):

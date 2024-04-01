@@ -6,8 +6,9 @@ import openai
 from pydantic import ValidationError
 
 from operagents.prop import Prop
-from operagents.config import OpenaiBackendConfig
-from operagents.exception import BackendError, OperagentsException
+from operagents.exception import BackendError
+from operagents.utils import get_template_renderer
+from operagents.config import TemplateConfig, OpenaiBackendConfig
 
 from ._base import Backend, Message
 
@@ -34,12 +35,17 @@ class OpenAIBackend(Backend):
         *,
         api_key: str | None = None,
         base_url: str | None = None,
+        prop_validation_error_template: TemplateConfig,
     ) -> None:
         super().__init__()
 
         self.client = openai.AsyncOpenAI(api_key=api_key, base_url=base_url)
         self.model: str = model
         self.temperature: float | None = temperature
+
+        self.prop_validation_error_renderer = get_template_renderer(
+            prop_validation_error_template
+        )
 
     @classmethod
     @override
@@ -51,6 +57,7 @@ class OpenAIBackend(Backend):
             temperature=config.temperature,
             api_key=config.api_key,
             base_url=config.base_url,
+            prop_validation_error_template=config.prop_validation_error_template,
         )
 
     async def _use_prop(self, prop: Prop, args: str) -> str:
@@ -60,15 +67,11 @@ class OpenAIBackend(Backend):
             try:
                 param = prop.params.model_validate_json(args)
             except ValidationError as e:
-                return str(e)
+                return await self.prop_validation_error_renderer.render_async(
+                    prop=prop, exc=e
+                )
 
-        try:
-            return str(await prop.use(param))
-        except OperagentsException:
-            # bypass operagents exceptions
-            raise
-        except Exception as e:
-            return str(e)
+        return str(await prop.use(param))
 
     def _prop_to_tool(self, prop: Prop) -> "ChatCompletionToolParam":
         if prop.params is None:

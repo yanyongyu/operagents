@@ -1,29 +1,33 @@
 import inspect
-from typing import Any, cast
+from typing import Any, ParamSpec, cast
 from collections.abc import Callable, Awaitable
 from typing_extensions import Self, TypeVar, override
 
 from pydantic import BaseModel
 
-from operagents.exception import PropError
-from operagents.config import FunctionPropConfig
-from operagents.utils import resolve_dot_notation
+from operagents.exception import PropError, OperagentsException
+from operagents.config import TemplateConfig, FunctionPropConfig
+from operagents.utils import resolve_dot_notation, get_template_renderer
 
 from ._base import Prop
 
-P = TypeVar("P", bound=BaseModel, default=BaseModel)
+P = ParamSpec("P")
+M = TypeVar("M", bound=BaseModel, default=BaseModel)
 R = TypeVar("R", default=Any)
 FunctionNoParams = Callable[[], Awaitable[R]]
-FunctionWithParams = Callable[[P], Awaitable[R]]
+FunctionWithParams = Callable[[M], Awaitable[R]]
 
 
-class FunctionProp(Prop[P, R]):
+class FunctionProp(Prop[M]):
     """Call custom functions with pydantic model."""
 
     type_ = "function"
 
     def __init__(
-        self, function: FunctionNoParams[R] | FunctionWithParams[P, R]
+        self,
+        function: FunctionNoParams[R] | FunctionWithParams[M, R],
+        *,
+        exception_template: TemplateConfig,
     ) -> None:
         super().__init__()
 
@@ -31,9 +35,11 @@ class FunctionProp(Prop[P, R]):
 
         func_params = inspect.signature(function).parameters
         if func_params:
-            self.params = cast(type[P], next(iter(func_params.values())).annotation)
+            self.params = cast(type[M], next(iter(func_params.values())).annotation)
         else:
             self.params = None
+
+        self.exception_renderer = get_template_renderer(exception_template)
 
     @property
     @override
@@ -50,14 +56,30 @@ class FunctionProp(Prop[P, R]):
     def from_config(  # pyright: ignore[reportIncompatibleMethodOverride]
         cls, config: FunctionPropConfig
     ) -> Self:
-        return cls(function=resolve_dot_notation(config.function))
+        return cls(
+            function=resolve_dot_notation(config.function),
+            exception_template=config.exception_template,
+        )
 
     @override
-    async def call(self, params: P | None) -> R:
+    async def call(self, params: M | None) -> R | str:
         if self.params is None:
-            return await cast(FunctionNoParams[R], self.function)()
+            return await self._call_with_catch(cast(FunctionNoParams[R], self.function))
         if params is None:
             raise PropError(
                 f"Function prop {self.name} requires parameter but none provided."
             )
-        return await cast(FunctionWithParams[P, R], self.function)(params)
+        return await self._call_with_catch(
+            cast(FunctionWithParams[M, R], self.function), params
+        )
+
+    async def _call_with_catch(
+        self, function: Callable[P, Awaitable[R]], *args: P.args, **kwargs: P.kwargs
+    ) -> R | str:
+        try:
+            return await function(*args, **kwargs)
+        except OperagentsException:
+            # bypass operagents exceptions
+            raise
+        except Exception as e:
+            return await self.exception_renderer.render_async(prop=self, exc=e)

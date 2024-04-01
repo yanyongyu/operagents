@@ -1,5 +1,17 @@
 # ruff: noqa: E501
 
+# backend config
+
+OPENAI_BACKEND_PROP_VALIDATION_ERROR_TEMPLATE = """
+Function parameters validation failed:
+{% for err in exc.errors() -%}
+Field name: {{ err["loc"] | join(".") }}
+Error message: {{ err["msg"] }}
+{%- endfor %}
+""".strip()
+
+# agent config
+
 AGENT_SESSION_SUMMARY_SYSTEM_TEMPLATE = """
 Your name is {{ agent.name }}.
 Your task is to summarize the historical dialogue records according to the current scene, and summarize the most important information.
@@ -17,4 +29,11 @@ AGENT_SESSION_SUMMARY_USER_TEMPLATE = """
 {{ event.character.agent_name }}({{ event.character.name }}): {{ event.content }}
 {%- endif %}
 {%- endfor %}
+""".strip()
+
+# prop config
+
+FUNCTION_PROP_EXCEPTION_TEMPLATE = """
+Function returned an error:
+{{ exc.__class__.__name__ }}: {{ exc }}
 """.strip()
