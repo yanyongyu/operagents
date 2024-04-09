@@ -27,6 +27,7 @@ class OpenaiBackendConfig(BaseModel):
     temperature: float | None = None
     api_key: str | None = None
     base_url: str | None = None
+    response_format: Literal["text", "json_object"] = "text"
     prop_validation_error_template: TemplateConfig = (
         OPENAI_BACKEND_PROP_VALIDATION_ERROR_TEMPLATE
     )

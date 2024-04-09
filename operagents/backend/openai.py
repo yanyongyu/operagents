@@ -1,6 +1,6 @@
 import asyncio
-from typing import TYPE_CHECKING, cast
 from typing_extensions import Self, override
+from typing import TYPE_CHECKING, Literal, cast
 
 import openai
 from pydantic import ValidationError
@@ -35,6 +35,7 @@ class OpenAIBackend(Backend):
         *,
         api_key: str | None = None,
         base_url: str | None = None,
+        response_format: Literal["text", "json_object"] = "text",
         prop_validation_error_template: TemplateConfig,
     ) -> None:
         super().__init__()
@@ -42,6 +43,7 @@ class OpenAIBackend(Backend):
         self.client = openai.AsyncOpenAI(api_key=api_key, base_url=base_url)
         self.model: str = model
         self.temperature: float | None = temperature
+        self.response_format: Literal["text", "json_object"] = response_format
 
         self.prop_validation_error_renderer = get_template_renderer(
             prop_validation_error_template
@@ -57,6 +59,7 @@ class OpenAIBackend(Backend):
             temperature=config.temperature,
             api_key=config.api_key,
             base_url=config.base_url,
+            response_format=config.response_format,
             prop_validation_error_template=config.prop_validation_error_template,
         )
 
@@ -104,6 +107,7 @@ class OpenAIBackend(Backend):
         response = await self.client.chat.completions.create(
             model=self.model,
             temperature=self.temperature,
+            response_format={"type": self.response_format},
             messages=messages_,
             tools=tools or openai.NOT_GIVEN,
             tool_choice="auto" if tools else openai.NOT_GIVEN,
@@ -144,6 +148,7 @@ class OpenAIBackend(Backend):
             response = await self.client.chat.completions.create(
                 model=self.model,
                 temperature=self.temperature,
+                response_format={"type": self.response_format},
                 messages=messages_,
                 tools=tools,
             )
