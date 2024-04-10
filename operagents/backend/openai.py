@@ -196,7 +196,9 @@ class OpenAIBackend(Backend):
                     "OpenAI returned tool calls but no props were provided"
                 )
 
-            messages_.append(cast("ChatCompletionAssistantMessageParam", reply))
+            messages_.append(
+                cast("ChatCompletionAssistantMessageParam", reply.model_dump())
+            )
 
             available_props = {prop.name: prop for prop in props}
             results = await asyncio.gather(
