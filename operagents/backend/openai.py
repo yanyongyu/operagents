@@ -197,7 +197,10 @@ class OpenAIBackend(Backend):
                 )
 
             messages_.append(
-                cast("ChatCompletionAssistantMessageParam", reply.model_dump())
+                cast(
+                    "ChatCompletionAssistantMessageParam",
+                    reply.model_dump(exclude_unset=True),
+                )
             )
 
             available_props = {prop.name: prop for prop in props}
