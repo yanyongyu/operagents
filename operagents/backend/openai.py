@@ -199,7 +199,7 @@ class OpenAIBackend(Backend):
             messages_.append(
                 cast(
                     "ChatCompletionAssistantMessageParam",
-                    {"role": "assistant", "tool_calls": reply.tool_calls},
+                    reply.model_dump(exclude_unset=True),
                 )
             )
 
