@@ -1,9 +1,12 @@
 import abc
-from typing import Literal, ClassVar, TypeAlias
 from typing_extensions import Self, Required, TypedDict
+from typing import TYPE_CHECKING, Literal, ClassVar, TypeAlias
 
 from operagents.prop import Prop
 from operagents.config import BackendConfig
+
+if TYPE_CHECKING:
+    from operagents.timeline import Timeline
 
 
 class Function(TypedDict):
@@ -70,7 +73,10 @@ class Backend(abc.ABC):
 
     @abc.abstractmethod
     async def generate(
-        self, messages: list[Message], props: list["Prop"] | None = None
+        self,
+        timeline: "Timeline",
+        messages: list[Message],
+        props: list["Prop"] | None = None,
     ) -> str:
         """Generate a message based on the given messages and props."""
         raise NotImplementedError

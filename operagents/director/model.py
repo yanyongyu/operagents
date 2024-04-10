@@ -64,7 +64,7 @@ class ModelDirector(Director):
             },
         ]
         logger.debug("Choosing next scene with messages: {messages}", messages=messages)
-        response = await self.backend.generate(messages)
+        response = await self.backend.generate(timeline, messages)
         logger.debug("Director response: {response}", response=response)
 
         if self.finish_flag is not None and self.finish_flag in response:

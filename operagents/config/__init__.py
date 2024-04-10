@@ -19,6 +19,25 @@ class CustomTemplateConfig(BaseModel):
 TemplateConfig: TypeAlias = str | CustomTemplateConfig
 
 
+class OpenaiBackendAutoToolChoiceConfig(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    type_: Literal["auto"] = Field(alias="type")
+
+
+class OpenaiBackendFunctionToolChoiceConfig(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    type_: Literal["function"] = Field(alias="type")
+    function: str
+
+
+OpenaiBackendToolChoiceConfig: TypeAlias = Annotated[
+    OpenaiBackendAutoToolChoiceConfig | OpenaiBackendFunctionToolChoiceConfig,
+    Field(discriminator="type_"),
+]
+
+
 class OpenaiBackendConfig(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -28,6 +47,9 @@ class OpenaiBackendConfig(BaseModel):
     api_key: str | None = None
     base_url: str | None = None
     response_format: Literal["text", "json_object"] = "text"
+    tool_choice: OpenaiBackendToolChoiceConfig = OpenaiBackendAutoToolChoiceConfig(
+        type="auto"
+    )
     prop_validation_error_template: TemplateConfig = (
         OPENAI_BACKEND_PROP_VALIDATION_ERROR_TEMPLATE
     )

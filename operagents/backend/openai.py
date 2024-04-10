@@ -1,5 +1,7 @@
+import abc
 import asyncio
 from typing_extensions import Self, override
+from collections.abc import Callable, Awaitable
 from typing import TYPE_CHECKING, Literal, cast
 
 import openai
@@ -7,8 +9,14 @@ from pydantic import ValidationError
 
 from operagents.prop import Prop
 from operagents.exception import BackendError
-from operagents.utils import get_template_renderer
-from operagents.config import TemplateConfig, OpenaiBackendConfig
+from operagents.utils import resolve_dot_notation, get_template_renderer
+from operagents.config import (
+    TemplateConfig,
+    OpenaiBackendConfig,
+    OpenaiBackendToolChoiceConfig,
+    OpenaiBackendAutoToolChoiceConfig,
+    OpenaiBackendFunctionToolChoiceConfig,
+)
 
 from ._base import Backend, Message
 
@@ -23,6 +31,59 @@ if TYPE_CHECKING:
     from openai.types.chat.chat_completion_assistant_message_param import (
         ChatCompletionAssistantMessageParam,
     )
+    from openai.types.chat.chat_completion_tool_choice_option_param import (
+        ChatCompletionToolChoiceOptionParam,
+    )
+
+    from operagents.timeline import Timeline
+
+
+class OpenAIBackendToolChoice(abc.ABC):
+    @abc.abstractmethod
+    async def choose(
+        self,
+        timeline: "Timeline",
+        messages: list["ChatCompletionMessageParam"],
+        props: list[Prop],
+    ) -> "ChatCompletionToolChoiceOptionParam": ...
+
+
+class OpenAIBackendAutoToolChoice(OpenAIBackendToolChoice):
+    async def choose(
+        self,
+        timeline: "Timeline",
+        messages: list["ChatCompletionMessageParam"],
+        props: list[Prop],
+    ) -> "ChatCompletionToolChoiceOptionParam":
+        return "auto"
+
+
+class OpenAIBackendFunctionToolChoice(OpenAIBackendToolChoice):
+    def __init__(
+        self,
+        function: Callable[
+            ["Timeline", list["ChatCompletionMessageParam"], list[Prop]],
+            Awaitable["ChatCompletionToolChoiceOptionParam"],
+        ],
+    ) -> None:
+        self.function = function
+
+    async def choose(
+        self,
+        timeline: "Timeline",
+        messages: list["ChatCompletionMessageParam"],
+        props: list[Prop],
+    ) -> "ChatCompletionToolChoiceOptionParam":
+        return await self.function(timeline, messages, props)
+
+
+def openai_backend_tool_choice_from_config(
+    config: OpenaiBackendToolChoiceConfig,
+) -> OpenAIBackendToolChoice:
+    if isinstance(config, OpenaiBackendAutoToolChoiceConfig):
+        return OpenAIBackendAutoToolChoice()
+    elif isinstance(config, OpenaiBackendFunctionToolChoiceConfig):
+        return OpenAIBackendFunctionToolChoice(resolve_dot_notation(config.function))
 
 
 class OpenAIBackend(Backend):
@@ -36,6 +97,7 @@ class OpenAIBackend(Backend):
         api_key: str | None = None,
         base_url: str | None = None,
         response_format: Literal["text", "json_object"] = "text",
+        tool_choice: OpenAIBackendToolChoice,
         prop_validation_error_template: TemplateConfig,
     ) -> None:
         super().__init__()
@@ -44,6 +106,7 @@ class OpenAIBackend(Backend):
         self.model: str = model
         self.temperature: float | None = temperature
         self.response_format: Literal["text", "json_object"] = response_format
+        self.tool_choice = tool_choice
 
         self.prop_validation_error_renderer = get_template_renderer(
             prop_validation_error_template
@@ -60,6 +123,7 @@ class OpenAIBackend(Backend):
             api_key=config.api_key,
             base_url=config.base_url,
             response_format=config.response_format,
+            tool_choice=openai_backend_tool_choice_from_config(config.tool_choice),
             prop_validation_error_template=config.prop_validation_error_template,
         )
 
@@ -97,21 +161,33 @@ class OpenAIBackend(Backend):
 
     @override
     async def generate(
-        self, messages: list[Message], props: list["Prop"] | None = None
+        self,
+        timeline: "Timeline",
+        messages: list[Message],
+        props: list["Prop"] | None = None,
     ) -> str:
+        messages_ = cast(list["ChatCompletionMessageParam"], messages)
+
         tools: list["ChatCompletionToolParam"] = (
             [self._prop_to_tool(prop) for prop in props] if props else []
         )
-        messages_ = cast(list["ChatCompletionMessageParam"], messages)
+        if props:
+            response = await self.client.chat.completions.create(
+                model=self.model,
+                temperature=self.temperature,
+                response_format={"type": self.response_format},
+                messages=messages_,
+                tools=tools,
+                tool_choice=(await self.tool_choice.choose(timeline, messages_, props)),
+            )
+        else:
+            response = await self.client.chat.completions.create(
+                model=self.model,
+                temperature=self.temperature,
+                response_format={"type": self.response_format},
+                messages=messages_,
+            )
 
-        response = await self.client.chat.completions.create(
-            model=self.model,
-            temperature=self.temperature,
-            response_format={"type": self.response_format},
-            messages=messages_,
-            tools=tools or openai.NOT_GIVEN,
-            tool_choice="auto" if tools else openai.NOT_GIVEN,
-        )
         reply = response.choices[0].message
 
         while reply.tool_calls:
@@ -145,13 +221,25 @@ class OpenAIBackend(Backend):
                     for call, result in zip(reply.tool_calls, results)
                 )
             )
-            response = await self.client.chat.completions.create(
-                model=self.model,
-                temperature=self.temperature,
-                response_format={"type": self.response_format},
-                messages=messages_,
-                tools=tools,
-            )
+
+            if props:
+                response = await self.client.chat.completions.create(
+                    model=self.model,
+                    temperature=self.temperature,
+                    response_format={"type": self.response_format},
+                    messages=messages_,
+                    tools=tools,
+                    tool_choice=(
+                        await self.tool_choice.choose(timeline, messages_, props)
+                    ),
+                )
+            else:
+                response = await self.client.chat.completions.create(
+                    model=self.model,
+                    temperature=self.temperature,
+                    response_format={"type": self.response_format},
+                    messages=messages_,
+                )
             reply = response.choices[0].message
 
         if reply.content is None:

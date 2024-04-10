@@ -177,12 +177,14 @@ class Agent:
         props = timeline.current_character.props
 
         self.logger.debug(
-            "Acting with messages: {messages}",
+            "Acting with {prop_count} props and messages: {messages}",
             scene=timeline.current_scene,
             character=timeline.current_character,
+            props=props,
+            prop_count=len(props),
             messages=messages,
         )
-        response = await self.backend.generate(messages, props)
+        response = await self.backend.generate(timeline, messages, props)
 
         self._do_observe(timeline, new_message)
         self._do_response(timeline, response)
@@ -233,7 +235,7 @@ class Agent:
                 scene=scene,
                 messages=messages,
             )
-            response = await self.backend.generate(messages)
+            response = await self.backend.generate(timeline, messages)
             self.logger.debug(
                 "Summary: {response}",
                 session_id=session_id,

@@ -1,8 +1,9 @@
 # ----- Project -----
 
-.idea
-.vscode
+.idea/
+.vscode/
 operagents/config/*.schema.json
+experimental_examples/
 
 # Created by https://www.toptal.com/developers/gitignore/api/python,node,visualstudiocode,jetbrains,macos,windows,linux
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,node,visualstudiocode,jetbrains,macos,windows,linux

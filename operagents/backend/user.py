@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING
 from typing_extensions import Self, override
 
 from noneprompt import InputPrompt, CancelledError
@@ -8,6 +9,9 @@ from operagents.exception import OperaFinished
 from operagents.config import UserBackendConfig
 
 from ._base import Backend, Message
+
+if TYPE_CHECKING:
+    from operagents.timeline import Timeline
 
 
 class UserBackend(Backend):
@@ -22,7 +26,10 @@ class UserBackend(Backend):
 
     @override
     async def generate(
-        self, messages: list[Message], props: list["Prop"] | None = None
+        self,
+        timeline: "Timeline",
+        messages: list[Message],
+        props: list["Prop"] | None = None,
     ) -> str:
         try:
             return await InputPrompt("You: ").prompt_async()

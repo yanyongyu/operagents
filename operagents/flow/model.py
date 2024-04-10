@@ -67,7 +67,7 @@ class ModelFlow(Flow):
         logger.debug(
             "Choosing next character with messages: {messages}", messages=messages
         )
-        response = await self.backend.generate(messages)
+        response = await self.backend.generate(timeline, messages)
         logger.debug("Flow response: {response}", response=response)
 
         allowed_characters = (
