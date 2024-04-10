@@ -106,7 +106,10 @@ class Agent:
     def _do_response(self, timeline: "Timeline", response: str) -> None:
         """Make the agent respond to a message."""
         self.logger.info(
-            response, scene=timeline.current_scene, character=timeline.current_character
+            "{response}",
+            response=response,
+            scene=timeline.current_scene,
+            character=timeline.current_character,
         )
 
         self.memory.remember(
