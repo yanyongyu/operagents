@@ -12,6 +12,8 @@ if TYPE_CHECKING:
 
 
 class SummaryHook(Hook):
+    type_ = "summary"
+
     def __init__(self, agent_names: list[str] | None) -> None:
         self.agent_names = agent_names
 
