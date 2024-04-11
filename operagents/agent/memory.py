@@ -64,16 +64,6 @@ class AgentMemory:
         self.events: list[AgentEvent] = []
         """Memorized events of the agent."""
 
-    def need_summary_sessions(self) -> list[UUID]:
-        """Get the scenes that need a summary."""
-        result: set[UUID] = set()
-        for event in self.events:
-            if isinstance(event, AgentEventObserve | AgentEventAct):
-                result.add(event.session_id)
-            elif isinstance(event, AgentEventSessionSummary):
-                result.discard(event.session_id)
-        return list(result)
-
     def summarized(self, session_id: UUID) -> bool:
         return any(
             isinstance(event, AgentEventSessionSummary)

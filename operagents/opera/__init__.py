@@ -2,6 +2,8 @@ from typing import TypedDict
 from dataclasses import dataclass
 from typing_extensions import Self
 
+from operagents import hook
+from operagents.hook import Hook
 from operagents.log import logger
 from operagents.scene import Scene
 from operagents.agent import Agent, AgentEvent
@@ -20,6 +22,7 @@ class Opera:
     agents: dict[str, Agent]
     scenes: dict[str, Scene]
     opening_scene: str
+    hooks: list[Hook]
 
     def __post_init__(self):
         self.timeline = Timeline(opera=self)
@@ -36,6 +39,7 @@ class Opera:
                 for name, scene_config in config.scenes.items()
             },
             opening_scene=config.opening_scene,
+            hooks=[hook.from_config(hook_config) for hook_config in config.hooks],
         )
 
     async def run(self) -> OperaResult:

@@ -266,10 +266,32 @@ class SceneConfig(BaseModel):
         return self
 
 
+class SummaryHookConfig(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    type_: Literal["summary"] = Field(alias="type")
+    agent_names: list[str] | None = None
+
+
+class CustomHookConfig(BaseModel):
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
+
+    type_: Literal["custom"] = Field(alias="type")
+    path: str
+
+
+HookConfig: TypeAlias = Annotated[
+    SummaryHookConfig | CustomHookConfig, Field(discriminator="type_")
+]
+
+
 class OperagentsConfig(BaseModel):
     agents: dict[str, AgentConfig]
     scenes: dict[str, SceneConfig]
     opening_scene: str
+    hooks: list[HookConfig] = Field(
+        default_factory=lambda: [SummaryHookConfig(type="summary")]
+    )
 
     @field_validator("agents")
     @classmethod
@@ -314,4 +336,15 @@ class OperagentsConfig(BaseModel):
     def check_opening_scene(self) -> Self:
         if self.opening_scene not in self.scenes:
             raise ValueError(f"Opening scene {self.opening_scene} not found in scenes")
+        return self
+
+    @model_validator(mode="after")
+    def check_hooks(self) -> Self:
+        for hook in self.hooks:
+            if isinstance(hook, SummaryHookConfig) and hook.agent_names is not None:
+                if invalid_agents := set(hook.agent_names) - set(self.agents):
+                    raise ValueError(
+                        "Summary hook agent names must be subset of agents, "
+                        f"invalid agents: {invalid_agents}"
+                    )
         return self

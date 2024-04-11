@@ -8,7 +8,7 @@ from operagents.log import logger
 from operagents.utils import get_template_renderer
 from operagents.exception import TimelineNotStarted
 from operagents.config import AgentConfig, TemplateConfig
-from operagents.timeline.event import TimelineEventAct, TimelineEventSessionEnd
+from operagents.timeline.event import TimelineEventSessionAct, TimelineEventSessionEnd
 
 from .memory import AgentEvent as AgentEvent
 from .memory import (
@@ -73,10 +73,6 @@ class Agent:
             raise TimelineNotStarted("The timeline has not been started.")
         return self._memory
 
-    async def _act_precheck(self, timeline: "Timeline") -> None:
-        """Check if the agent needs to summarize the scene before acting."""
-        await self.summary(timeline)
-
     def _memory_to_message(self, memory_event: AgentEvent) -> "Message":
         """Convert an agent memory event to a message."""
         if isinstance(memory_event, AgentEventObserve | AgentEventSessionSummary):
@@ -123,10 +119,8 @@ class Agent:
 
     async def fake_act(
         self, timeline: "Timeline", response: str, do_observe: bool = True
-    ) -> TimelineEventAct:
+    ) -> TimelineEventSessionAct:
         """Make the agent act with a given response."""
-
-        await self._act_precheck(timeline)
 
         new_message = (
             (
@@ -146,17 +140,15 @@ class Agent:
             self._do_observe(timeline, new_message)
         self._do_response(timeline, response)
 
-        return TimelineEventAct(
+        return TimelineEventSessionAct(
             session_id=timeline.current_session_id,
             scene=timeline.current_scene,
             character=timeline.current_character,
             content=response,
         )
 
-    async def act(self, timeline: "Timeline") -> TimelineEventAct:
+    async def act(self, timeline: "Timeline") -> TimelineEventSessionAct:
         """Make the agent act."""
-
-        await self._act_precheck(timeline)
 
         system_message = (
             await self.system_renderer.render_async(agent=self, timeline=timeline)
@@ -192,65 +184,63 @@ class Agent:
         self._do_observe(timeline, new_message)
         self._do_response(timeline, response)
 
-        return TimelineEventAct(
+        return TimelineEventSessionAct(
             session_id=timeline.current_session_id,
             scene=timeline.current_scene,
             character=timeline.current_character,
             content=response,
         )
 
-    async def summary(self, timeline: "Timeline") -> None:
-        """Make the agent summarize the scene sessions."""
-        need_summary_sessions = self.memory.need_summary_sessions()
-        ended_sessions = {
-            event.session_id: event.scene
-            for event in timeline.events
-            if isinstance(event, TimelineEventSessionEnd)
-        }
-        for session_id in need_summary_sessions:
-            if session_id not in ended_sessions:
-                continue
+    async def summary(
+        self, timeline: "Timeline", event: TimelineEventSessionEnd
+    ) -> None:
+        """Make the agent summarize the scene session when it ends"""
 
-            scene = ended_sessions[session_id]
-            system_message = (
-                await self.session_summary_system_renderer.render_async(
-                    agent=self, timeline=timeline, session_id=session_id, scene=scene
-                )
-            ).strip()
-            summary_message = (
-                await self.session_summary_user_renderer.render_async(
-                    agent=self, timeline=timeline, session_id=session_id, scene=scene
-                )
-            ).strip()
-            messages: list["Message"] = [
-                {
-                    "role": "system",
-                    "content": system_message,
-                },
-                {
-                    "role": "user",
-                    "content": summary_message,
-                },
-            ]
-            self.logger.debug(
-                "Summarizing with messages: {messages}",
-                session_id=session_id,
-                scene=scene,
-                messages=messages,
-            )
-            response = await self.backend.generate(timeline, messages)
-            self.logger.debug(
-                "Summary: {response}",
-                session_id=session_id,
-                scene=scene,
-                response=response,
-            )
+        session_id = event.session_id
+        scene = event.scene
 
-            self.memory.remember(
-                AgentEventSessionSummary(
-                    session_id=session_id, scene=scene, content=summary_message
-                )
+        if self.memory.summarized(session_id):
+            return
+
+        system_message = (
+            await self.session_summary_system_renderer.render_async(
+                agent=self, timeline=timeline, session_id=session_id, scene=scene
             )
+        ).strip()
+        summary_message = (
+            await self.session_summary_user_renderer.render_async(
+                agent=self, timeline=timeline, session_id=session_id, scene=scene
+            )
+        ).strip()
+        messages: list["Message"] = [
+            {
+                "role": "system",
+                "content": system_message,
+            },
+            {
+                "role": "user",
+                "content": summary_message,
+            },
+        ]
+        self.logger.debug(
+            "Summarizing with messages: {messages}",
+            session_id=session_id,
+            scene=scene,
+            messages=messages,
+        )
+        response = await self.backend.generate(timeline, messages)
+        self.logger.debug(
+            "Summary: {response}",
+            session_id=session_id,
+            scene=scene,
+            response=response,
+        )
+
+        self.memory.remember(
+            AgentEventSessionSummary(
+                session_id=session_id, scene=scene, content=summary_message
+            )
+        )
 
     async def __aenter__(self) -> Self:
         self._memory = AgentMemory()
