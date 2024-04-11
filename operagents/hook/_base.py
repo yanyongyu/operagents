@@ -29,7 +29,7 @@ class Hook(abc.ABC):
 
     async def invoke(self, timeline: "Timeline", event: "TimelineEvent") -> None:
         event_type = event.type_
-        if handler := getattr(self, f"on_{event_type}", None):
+        if handler := getattr(self, f"on_timeline_{event_type}", None):
             logger.debug(
                 f"Invoking timeline hook {self.__class__.__name__}.{handler.__name__}"
             )

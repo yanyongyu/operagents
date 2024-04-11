@@ -112,6 +112,8 @@ agents:
       temperature: 0.5
       api_key:
       base_url:
+      tool_choice:
+        type: auto
       prop_validation_error_template: |-
         {# some jinja template #}
 ```
@@ -535,6 +537,87 @@ The characters in the scene can use props to improve there acting. The `props` s
        async def call(self, params: BaseModel | None) -> Any:
            return ""
    ```
+
+### The Hook config
+
+Hooks enables you to run custom code when specific timeline events occur. The `hooks` section is a list of hooks, where each hook is a dictionary with the hook type and the hook config. By default, operagents enables the `summary` hook unless you change the `hooks` section.
+
+1. `summary` Hook
+
+   The `summary` hook will call the agents to summarize the session when the session ends. You can optionally specify the agent names to summarize.
+
+   ```yaml
+   hooks:
+     - type: summary
+       agent_names:
+         - Mike
+         - John
+   ```
+
+2. `custom` Hook
+
+   The `custom` hook will invoke the custom hook class when specific timeline event encounters.
+
+   ```yaml
+   hooks:
+     - type: custom
+       path: module_name:CustomHook
+       custom_config: value
+   ```
+
+   ```python
+   # module_name.py
+
+   from typing import Self
+
+   from operagents.hook import Hook
+   from operagents.timeline import Timeline
+   from operagents.config import CustomHookConfig
+   from operagents.timeline.event import (
+       TimelineEventEnd,
+       TimelineEventStart,
+       TimelineEventSessionAct,
+       TimelineEventSessionEnd,
+       TimelineEventSessionStart,
+   )
+
+   class CustomHook(Hook):
+       @classmethod
+       def from_config(cls, config: CustomHookConfig) -> Self:
+           return cls()
+
+       async def on_timeline_start(
+           self, timeline: Timeline, event: TimelineEventStart
+       ):
+           """Called when the timeline is started."""
+           pass
+
+       async def on_timeline_end(
+           self, timeline: Timeline, event: TimelineEventEnd
+       ):
+           """Called when the timeline is ended."""
+           pass
+
+       async def on_timeline_session_start(
+           self, timeline: Timeline, event: TimelineEventSessionStart
+       ):
+           """Called when a session is started."""
+           pass
+
+       async def on_timeline_session_end(
+           self, timeline: Timeline, event: TimelineEventSessionEnd
+       ):
+           """Called when a session is ended."""
+           pass
+
+       async def on_timeline_session_act(
+           self, timeline: Timeline, event: TimelineEventSessionAct
+       ):
+           """Called when a character acts in a session."""
+           pass
+   ```
+
+   The hook class may contains methods in the format of `on_timeline_<event_type>`, where `<event_type>` is the type of the timeline event.
 
 ## Examples
 
