@@ -108,10 +108,11 @@ agents:
     backend:
       # openai api as the backend
       type: openai
-      model: gpt-3.5-turbo-16k-0613
+      model: gpt-3.5-turbo
       temperature: 0.5
       api_key:
       base_url:
+      max_retries: 2
       tool_choice:
         type: auto
       prop_validation_error_template: |-
@@ -169,7 +170,7 @@ agents:
       Please answer directly what you want to say and keep your reply as concise as possible.
     user_template: |-
       {% for event in timeline.past_events(agent) -%}
-      {% if event.type_ == "act" -%}
+      {% if event.type_ == "session_act" -%}
       {{ event.character.agent_name }}({{ event.character.name }}): {{ event.content }}
       {%- endif %}
       {%- endfor %}
@@ -192,7 +193,7 @@ agents:
       {%- endif %}
       {%- endfor %}
       {% for event in timeline.session_past_events(agent, session_id) -%}
-      {% if event.type_ == "act" -%}
+      {% if event.type_ == "session_act" -%}
       {{ event.character.agent_name }}({{ event.character.name }}): {{ event.content }}
       {%- endif %}
       {%- endfor %}

@@ -110,7 +110,9 @@ class Timeline:
     def session_act_num(self, session_id: UUID) -> int:
         """Get the number of acts in the scene session."""
         return sum(
-            1 for event in self.session_events(session_id) if event.type_ == "act"
+            1
+            for event in self.session_events(session_id)
+            if isinstance(event, TimelineEventSessionAct)
         )
 
     @property

@@ -6,9 +6,9 @@ from typing import Literal
 
 import yaml
 
-from operagents.log import logger
 from operagents.opera import Opera
 from operagents.config import OperagentsConfig
+from operagents.log import logger, setup_logging
 
 parser = argparse.ArgumentParser(prog="operagents", description="OperAgents CLI")
 
@@ -18,12 +18,12 @@ subcommands = parser.add_subparsers(title="Commands")
 async def handle_run(
     config: str, path: bool = True, log_level: Literal["DEBUG", "INFO"] = "INFO"
 ):
+    setup_logging(log_level)
+
     if path:
         sys_path = str(Path.cwd().resolve())
         if sys_path not in sys.path:
             sys.path.insert(0, sys_path)
-
-    logger.configure(extra={"log_level": log_level})
 
     logger.info("Loading opera config...", path=config)
     try:

@@ -25,7 +25,7 @@ AGENT_SESSION_SUMMARY_USER_TEMPLATE = """
 {%- endif %}
 {%- endfor %}
 {% for event in timeline.session_past_events(agent, session_id) -%}
-{% if event.type_ == "act" -%}
+{% if event.type_ == "session_act" -%}
 {{ event.character.agent_name }}({{ event.character.name }}): {{ event.content }}
 {%- endif %}
 {%- endfor %}

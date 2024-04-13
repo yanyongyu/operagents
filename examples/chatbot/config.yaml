@@ -7,7 +7,7 @@ agents:
     system_template: ""
     user_template: |-
       {% for event in timeline.past_events(agent) -%}
-      {% if event.type_ == "act" -%}
+      {% if event.type_ == "session_act" -%}
       {{ event.character.agent_name }}({{ event.character.name }}): {{ event.content }}
       {%- endif %}
       {%- endfor %}
@@ -30,7 +30,7 @@ agents:
       Please answer directly what you want to say and keep your reply as concise as possible.
     user_template: |-
       {% for event in timeline.past_events(agent) -%}
-      {% if event.type_ == "act" -%}
+      {% if event.type_ == "session_act" -%}
       {{ event.character.agent_name }}({{ event.character.name }}): {{ event.content }}
       {%- endif %}
       {%- endfor %}
@@ -62,9 +62,9 @@ scenes:
       user_template: |-
         Here is the chat history:
         {% for event in timeline.current_events -%}
-        {% if event.type_ == "act" -%}
+        {% if event.type_ == "session_act" -%}
         {{ event.character.agent_name }}({{ event.character.name }}): {{ event.content }}
-        {%- endif %}
+        {% endif %}
         {%- endfor %}
 
         Please observe the ongoing discussion and decide whether more communication is needed between user and AI assistant.
