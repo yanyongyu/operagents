@@ -46,6 +46,7 @@ class OpenaiBackendConfig(BaseModel):
     temperature: float | None = None
     api_key: str | None = None
     base_url: str | None = None
+    max_retries: int = 2
     response_format: Literal["text", "json_object"] = "text"
     tool_choice: OpenaiBackendToolChoiceConfig = OpenaiBackendAutoToolChoiceConfig(
         type="auto"

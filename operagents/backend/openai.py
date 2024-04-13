@@ -96,13 +96,16 @@ class OpenAIBackend(Backend):
         *,
         api_key: str | None = None,
         base_url: str | None = None,
+        max_retries: int = 2,
         response_format: Literal["text", "json_object"] = "text",
         tool_choice: OpenAIBackendToolChoice,
         prop_validation_error_template: TemplateConfig,
     ) -> None:
         super().__init__()
 
-        self.client = openai.AsyncOpenAI(api_key=api_key, base_url=base_url)
+        self.client = openai.AsyncOpenAI(
+            api_key=api_key, base_url=base_url, max_retries=max_retries
+        )
         self.model: str = model
         self.temperature: float | None = temperature
         self.response_format: Literal["text", "json_object"] = response_format
@@ -123,6 +126,7 @@ class OpenAIBackend(Backend):
             api_key=config.api_key,
             base_url=config.base_url,
             response_format=config.response_format,
+            max_retries=config.max_retries,
             tool_choice=openai_backend_tool_choice_from_config(config.tool_choice),
             prop_validation_error_template=config.prop_validation_error_template,
         )

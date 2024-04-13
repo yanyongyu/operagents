@@ -181,7 +181,9 @@ class Timeline:
             scene=self.current_scene,
             current_character=self.current_character,
         )
+        # OperationFinished may be raise here by props
         await self._character_act()
+        # OperationFinished may be raise here by director
         if next_scene := await self._next_scene():
             # change to next scene
             logger.info(
