@@ -50,6 +50,8 @@ A session indicates a single run of the scene. It contains an unique identifier 
 
 ## Usage
 
+The common way to use operagents is to write a config file and run the opera with the `operagents` command-line tool.
+
 ### Start writing a config file
 
 Create a `config.yaml` file with the following basic content:
@@ -619,6 +621,22 @@ Hooks enables you to run custom code when specific timeline events occur. The `h
    ```
 
    The hook class may contains methods in the format of `on_timeline_<event_type>`, where `<event_type>` is the type of the timeline event.
+
+### Run the opera
+
+operagents provides a command-line tool to easily run the opera. You can run the opera with the following command:
+
+```bash
+operagents run config.yaml
+```
+
+If you want to see the debug logs, you can set the `--log-level` option:
+
+```bash
+operagents run --log-level DEBUG config.yaml
+```
+
+More commands and options can be found by running `operagents --help`.
 
 ## Examples
 
