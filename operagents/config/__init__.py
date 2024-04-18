@@ -198,6 +198,7 @@ class NeverDirectorConfig(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     type_: Literal["never"] = Field(alias="type")
+    max_act_num: int | None = None
 
 
 class CustomDirectorConfig(BaseModel):
