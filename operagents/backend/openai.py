@@ -131,7 +131,7 @@ class OpenAIBackend(Backend):
             prop_validation_error_template=config.prop_validation_error_template,
         )
 
-    async def _use_prop(self, prop: Prop, args: str) -> str:
+    async def _use_prop(self, timeline: "Timeline", prop: Prop, args: str) -> str:
         if prop.params is None:
             param = None
         else:
@@ -142,7 +142,7 @@ class OpenAIBackend(Backend):
                     prop=prop, exc=e
                 )
 
-        return str(await prop.use(param))
+        return str(await prop.use(timeline, param))
 
     def _prop_to_tool(self, prop: Prop) -> "ChatCompletionToolParam":
         if prop.params is None:
@@ -211,7 +211,9 @@ class OpenAIBackend(Backend):
             results = await asyncio.gather(
                 *(
                     self._use_prop(
-                        available_props[call.function.name], call.function.arguments
+                        timeline,
+                        available_props[call.function.name],
+                        call.function.arguments,
                     )
                     for call in reply.tool_calls
                 )

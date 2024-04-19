@@ -1,15 +1,20 @@
 from uuid import UUID
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal, Annotated, TypeAlias
+from typing_extensions import TypeVar
+from typing import TYPE_CHECKING, Any, Generic, Literal, Annotated, TypeAlias
 
-from pydantic import Field
+from pydantic import Field, BaseModel
 
 from operagents.exception import SceneFinished
 
 if TYPE_CHECKING:
+    from operagents.prop import Prop
     from operagents.scene import Scene
     from operagents.timeline import Timeline
     from operagents.character import Character
+
+
+P = TypeVar("P", bound=BaseModel, default=BaseModel)
 
 
 @dataclass(eq=False, kw_only=True)
@@ -53,8 +58,21 @@ class AgentEventAct:
     content: str
 
 
+@dataclass(eq=False, kw_only=True)
+class AgentEventUseProp(Generic[P]):
+    """Agent use prop."""
+
+    type_: Literal["use_prop"] = "use_prop"
+    session_id: UUID
+    scene: "Scene"
+    character: "Character"
+    prop: "Prop[P]"
+    prop_params: P
+    prop_result: Any
+
+
 AgentEvent: TypeAlias = Annotated[
-    AgentEventObserve | AgentEventSessionSummary | AgentEventAct,
+    AgentEventObserve | AgentEventSessionSummary | AgentEventAct | AgentEventUseProp,
     Field(discriminator="type_"),
 ]
 

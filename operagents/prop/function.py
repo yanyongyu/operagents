@@ -1,7 +1,7 @@
 import inspect
-from typing import Any, ParamSpec, cast
 from collections.abc import Callable, Awaitable
 from typing_extensions import Self, TypeVar, override
+from typing import TYPE_CHECKING, Any, ParamSpec, cast
 
 from pydantic import BaseModel
 
@@ -10,6 +10,9 @@ from operagents.config import TemplateConfig, FunctionPropConfig
 from operagents.utils import resolve_dot_notation, get_template_renderer
 
 from ._base import Prop
+
+if TYPE_CHECKING:
+    from operagents.timeline import Timeline
 
 P = ParamSpec("P")
 M = TypeVar("M", bound=BaseModel, default=BaseModel)
@@ -62,7 +65,7 @@ class FunctionProp(Prop[M]):
         )
 
     @override
-    async def call(self, params: M | None) -> R | str:
+    async def call(self, timeline: "Timeline", params: M | None) -> R | str:
         if self.params is None:
             return await self._call_with_catch(cast(FunctionNoParams[R], self.function))
         if params is None:

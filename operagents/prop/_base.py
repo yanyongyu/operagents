@@ -1,12 +1,15 @@
 import abc
-from typing import Any, Generic, ClassVar
 from typing_extensions import Self, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, ClassVar
 
 from pydantic import BaseModel
 
 from operagents.log import logger
 from operagents.config import PropConfig
 from operagents.exception import OperaFinished
+
+if TYPE_CHECKING:
+    from operagents.timeline import Timeline
 
 Jsonable = str | int | float | bool | list["Jsonable"] | dict[str, "Jsonable"]
 
@@ -38,13 +41,13 @@ class Prop(abc.ABC, Generic[P]):
     def from_config(cls, config: PropConfig) -> Self:
         raise NotImplementedError
 
-    async def use(self, params: P | None) -> Any:
+    async def use(self, timeline: "Timeline", params: P | None) -> Any:
         """Use the prop to call functions."""
         logger.debug(
             "Using prop {prop.name} with params: {params!r}", prop=self, params=params
         )
         try:
-            result = await self.call(params)
+            result = await self.call(timeline, params)
         except OperaFinished:
             logger.info("Prop {prop.name} ended the opera", prop=self)
             # allow prop to end the opera
@@ -62,6 +65,6 @@ class Prop(abc.ABC, Generic[P]):
         return result
 
     @abc.abstractmethod
-    async def call(self, params: P | None) -> Any:
+    async def call(self, timeline: "Timeline", params: P | None) -> Any:
         """Call function with the given parameters."""
         raise NotImplementedError

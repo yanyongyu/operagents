@@ -258,7 +258,7 @@ The `Flow` of the scene is designed to control the order of the characters' acti
          type: model
          backend:
            type: openai
-           model: gpt-3.5-turbo-16k-0613
+           model: gpt-3.5-turbo
            temperature: 0.5
          system_template: ""
          user_template: ""
@@ -329,7 +329,7 @@ The `Director` of the scene is used to control the next scene to play. You can s
          type: model
          backend:
            type: openai
-           model: gpt-3.5-turbo-16k-0613
+           model: gpt-3.5-turbo
            temperature: 0.5
          system_template: ""
          user_template: ""
