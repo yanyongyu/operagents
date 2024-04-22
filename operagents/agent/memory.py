@@ -66,8 +66,10 @@ class AgentEventUseProp(Generic[P]):
     session_id: UUID
     scene: "Scene"
     character: "Character"
+    usage_id: str
     prop: "Prop[P]"
-    prop_params: P
+    prop_raw_params: str
+    prop_params: P | None
     prop_result: Any
 
 

@@ -8,7 +8,7 @@ from operagents.log import logger
 from operagents.exception import OperaFinished
 from operagents.config import UserBackendConfig
 
-from ._base import Backend, Message
+from ._base import Backend, Message, GenerateResponse
 
 if TYPE_CHECKING:
     from operagents.timeline import Timeline
@@ -30,9 +30,11 @@ class UserBackend(Backend):
         timeline: "Timeline",
         messages: list[Message],
         props: list["Prop"] | None = None,
-    ) -> str:
+    ) -> GenerateResponse:
         try:
-            return await InputPrompt("You: ").prompt_async()
+            return GenerateResponse(
+                content=await InputPrompt("You: ").prompt_async(), prop_usage=[]
+            )
         except CancelledError:
             logger.info("User cancelled input.")
             raise OperaFinished() from None

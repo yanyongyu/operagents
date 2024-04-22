@@ -15,12 +15,13 @@ from .memory import (
     AgentMemory,
     AgentEventAct,
     AgentEventObserve,
+    AgentEventUseProp,
     AgentEventSessionSummary,
 )
 
 if TYPE_CHECKING:
     from operagents.timeline import Timeline
-    from operagents.backend import Backend, Message
+    from operagents.backend import Backend, Message, PropMessage
 
 
 @dataclass(eq=False)
@@ -85,6 +86,15 @@ class Agent:
                 "role": "assistant",
                 "content": memory_event.content,
             }
+        elif isinstance(memory_event, AgentEventUseProp):
+            return {
+                "role": "prop",
+                "usage_id": memory_event.usage_id,
+                "prop": memory_event.prop,
+                "raw_params": memory_event.prop_raw_params,
+                "params": memory_event.prop_params,
+                "result": memory_event.prop_result,
+            }
 
         # This should never happen
         raise ValueError(f"Unknown memory event type: {memory_event.type_}")
@@ -99,7 +109,9 @@ class Agent:
             )
         )
 
-    def _do_response(self, timeline: "Timeline", response: str) -> None:
+    def _do_response(
+        self, timeline: "Timeline", response: str, prop_usages: list["PropMessage"]
+    ) -> None:
         """Make the agent respond to a message."""
         self.logger.info(
             "{response}",
@@ -107,6 +119,20 @@ class Agent:
             scene=timeline.current_scene,
             character=timeline.current_character,
         )
+
+        for prop_message in prop_usages:
+            self.memory.remember(
+                AgentEventUseProp(
+                    session_id=timeline.current_session_id,
+                    scene=timeline.current_scene,
+                    character=timeline.current_character,
+                    usage_id=prop_message["usage_id"],
+                    prop=prop_message["prop"],
+                    prop_raw_params=prop_message["raw_params"],
+                    prop_params=prop_message["params"],
+                    prop_result=prop_message["result"],
+                )
+            )
 
         self.memory.remember(
             AgentEventAct(
@@ -138,7 +164,7 @@ class Agent:
 
         if new_message is not None:
             self._do_observe(timeline, new_message)
-        self._do_response(timeline, response)
+        self._do_response(timeline, response, [])
 
         return TimelineEventSessionAct(
             session_id=timeline.current_session_id,
@@ -182,13 +208,13 @@ class Agent:
         response = await self.backend.generate(timeline, messages, props)
 
         self._do_observe(timeline, new_message)
-        self._do_response(timeline, response)
+        self._do_response(timeline, response.content, response.prop_usage)
 
         return TimelineEventSessionAct(
             session_id=timeline.current_session_id,
             scene=timeline.current_scene,
             character=timeline.current_character,
-            content=response,
+            content=response.content,
         )
 
     async def summary(
@@ -233,12 +259,12 @@ class Agent:
             "Summary: {response}",
             session_id=session_id,
             scene=scene,
-            response=response,
+            response=response.content,
         )
 
         self.memory.remember(
             AgentEventSessionSummary(
-                session_id=session_id, scene=scene, content=summary_message
+                session_id=session_id, scene=scene, content=response.content
             )
         )
 
