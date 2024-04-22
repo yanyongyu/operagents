@@ -1,4 +1,5 @@
 import sys
+import json
 import asyncio
 import argparse
 from pathlib import Path
@@ -19,7 +20,10 @@ subcommands = parser.add_subparsers(title="Commands")
 
 
 async def handle_run(
-    config: str, path: bool = True, log_level: Literal["DEBUG", "INFO"] = "INFO"
+    config: str,
+    path: bool = True,
+    log_level: Literal["DEBUG", "INFO"] = "INFO",
+    export: str | None = None,
 ):
     setup_logging(log_level)
 
@@ -31,13 +35,18 @@ async def handle_run(
     logger.info("Loading opera config...", path=config)
     try:
         opera = Opera.from_config(
-            OperagentsConfig.model_validate(yaml.safe_load(Path(config).read_text()))
+            OperagentsConfig.model_validate(
+                yaml.safe_load(Path(config).read_text(encoding="utf-8"))
+            )
         )
     except Exception:
         logger.exception("Failed to load opera config.", path=config)
         return
 
-    await opera.run()
+    result = await opera.run()
+
+    if export is not None:
+        Path(export).write_text(json.dumps(result, indent=2), encoding="utf-8")
 
 
 run = subcommands.add_parser(
@@ -51,6 +60,9 @@ run.add_argument(
 )
 run.add_argument(
     "--log-level", default="INFO", choices=["DEBUG", "INFO"], help="The log level."
+)
+run.add_argument(
+    "--export", default=None, help="Export the opera run result to a JSON file."
 )
 run.add_argument("config", help="The path to the operagents configuration file.")
 run.set_defaults(handler=handle_run)
@@ -68,7 +80,7 @@ async def handle_validate(
 
     try:
         opera_config = OperagentsConfig.model_validate(
-            yaml.safe_load(Path(config).read_text())
+            yaml.safe_load(Path(config).read_text(encoding="utf-8"))
         )
     except ValidationError as e:
         logger.error(f"Config file is invalid.\n{e}")
