@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 from typing_extensions import Self, override
@@ -12,11 +11,14 @@ if TYPE_CHECKING:
     from operagents.timeline import Timeline
 
 
-@dataclass
 class FunctionScenePrepare(ScenePrepare):
     type_ = "function"
 
-    function: Callable[["Timeline"], Any]
+    def __init__(self, function: Callable[["Timeline"], Any]):
+        self.function = function
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(function={self.function.__name__})"
 
     @classmethod
     @override

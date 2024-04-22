@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING
 from typing_extensions import Self
-from dataclasses import field, dataclass
 
 from operagents import prop
 from operagents.config import CharacterConfig
@@ -12,16 +11,29 @@ if TYPE_CHECKING:
     from operagents.timeline.event import TimelineEventSessionAct
 
 
-@dataclass(eq=False)
 class Character:
-    name: str
-    """The name of the character."""
-    description: str | None
-    """The description of the character."""
-    agent_name: str
-    """The name of the agent that acts as the character."""
-    props: list["Prop"] = field(default_factory=list, kw_only=True)
-    """The props the character has."""
+    def __init__(
+        self,
+        name: str,
+        description: str | None,
+        agent_name: str,
+        props: list["Prop"] | None = None,
+    ):
+        self.name: str = name
+        """The name of the character."""
+        self.description: str | None = description
+        """The description of the character."""
+        self.agent_name: str = agent_name
+        """The name of the agent that acts as the character."""
+        self.props: list["Prop"] = props or []
+        """The props the character has."""
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"name={self.name!r}, agent_name={self.agent_name!r}, props={self.props!r}"
+            ")"
+        )
 
     @classmethod
     def from_config(cls, name: str, config: CharacterConfig) -> Self:

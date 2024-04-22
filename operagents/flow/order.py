@@ -1,5 +1,4 @@
 from typing import TYPE_CHECKING
-from dataclasses import dataclass
 from typing_extensions import Self, override
 
 from operagents.config import OrderFlowConfig
@@ -11,11 +10,14 @@ if TYPE_CHECKING:
     from operagents.character import Character
 
 
-@dataclass
 class OrderFlow(Flow):
     type_ = "order"
 
-    order: list[str] | None = None
+    def __init__(self, order: list[str] | None = None):
+        self.order: list[str] | None = order
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(order={self.order})"
 
     @classmethod
     @override

@@ -1,61 +1,70 @@
 from uuid import UUID
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal, Annotated, TypeAlias
+from typing import Literal, Annotated, TypeAlias
 
-from pydantic import Field
+from pydantic import Field, BaseModel, ConfigDict, field_serializer
 
-if TYPE_CHECKING:
-    from operagents.scene import Scene
-    from operagents.character import Character
+from operagents.scene import Scene
+from operagents.character import Character
+from operagents.utils import scene_serializer, character_serializer
 
 
-@dataclass(eq=False, kw_only=True)
-class TimelineEventStart:
+class TimelineEventStart(BaseModel):
     """Event indicating the start of a timeline."""
 
     type_: Literal["start"] = "start"
 
 
-@dataclass(eq=False, kw_only=True)
-class TimelineEventEnd:
+class TimelineEventEnd(BaseModel):
     """Event indicating the end of a timeline."""
 
     type_: Literal["end"] = "end"
 
 
-@dataclass(init=False, eq=False, kw_only=True)
-class TimelineSessionEvent:
+class TimelineSessionEvent(BaseModel):
     """Abstract class for timeline events that are associated with a session."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     session_id: UUID
-    scene: "Scene"
+    scene: Scene
+
+    _serialize_scene = field_serializer("scene")(scene_serializer)
 
 
-@dataclass(eq=False, kw_only=True)
 class TimelineEventSessionAct(TimelineSessionEvent):
     """Event indicating an character act in a session."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     type_: Literal["session_act"] = "session_act"
-    character: "Character"
+    character: Character
     content: str
 
+    _character_serializer = field_serializer("character")(character_serializer)
 
-@dataclass(eq=False, kw_only=True)
+
 class TimelineEventSessionStart(TimelineSessionEvent):
     """Event indicating the start of a session."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     type_: Literal["session_start"] = "session_start"
     session_id: UUID
-    scene: "Scene"
+    scene: Scene
+
+    _serialize_scene = field_serializer("scene")(scene_serializer)
 
 
-@dataclass(eq=False, kw_only=True)
 class TimelineEventSessionEnd(TimelineSessionEvent):
     """Event indicating the end of a session."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     type_: Literal["session_end"] = "session_end"
     session_id: UUID
-    scene: "Scene"
+    scene: Scene
+
+    _serialize_scene = field_serializer("scene")(scene_serializer)
 
 
 TimelineEvent: TypeAlias = Annotated[

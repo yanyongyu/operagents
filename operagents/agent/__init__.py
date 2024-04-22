@@ -1,7 +1,6 @@
 from types import TracebackType
 from typing import TYPE_CHECKING
 from typing_extensions import Self
-from dataclasses import field, dataclass
 
 from operagents import backend
 from operagents.log import logger
@@ -24,27 +23,34 @@ if TYPE_CHECKING:
     from operagents.backend import Backend, Message, PropMessage
 
 
-@dataclass(eq=False)
 class Agent:
-    name: str
-    """The name of the agent."""
-    # style: str
-    backend: "Backend"
-    """The backend to use for generating text."""
+    def __init__(
+        self,
+        name: str,
+        backend: "Backend",
+        *,
+        system_template: TemplateConfig,
+        user_template: TemplateConfig,
+        session_summary_system_template: TemplateConfig,
+        session_summary_user_template: TemplateConfig,
+    ):
+        self.name: str = name
+        """The name of the agent."""
+        self.backend: "Backend" = backend
+        """The backend to use for generating text."""
 
-    system_template: TemplateConfig = field(kw_only=True)
-    """The system template to use for generating text."""
-    user_template: TemplateConfig = field(kw_only=True)
-    """The user template to use for generating text."""
+        self.system_template = system_template
+        """The system template to use for generating text."""
+        self.user_template = user_template
+        """The user template to use for generating text."""
 
-    session_summary_system_template: TemplateConfig = field(kw_only=True)
-    """The scene summary system template to use for generating summary."""
-    session_summary_user_template: TemplateConfig = field(kw_only=True)
-    """The scene summary user template to use for generating summary."""
+        self.session_summary_system_template = session_summary_system_template
+        """The scene summary system template to use for generating summary."""
+        self.session_summary_user_template = session_summary_user_template
+        """The scene summary user template to use for generating summary."""
 
-    _memory: AgentMemory | None = field(default=None, init=False)
+        self._memory: AgentMemory | None = None
 
-    def __post_init__(self):
         self.logger = logger.bind(agent=self)
         self.system_renderer = get_template_renderer(self.system_template)
         self.user_renderer = get_template_renderer(self.user_template)
@@ -53,6 +59,11 @@ class Agent:
         )
         self.session_summary_user_renderer = get_template_renderer(
             self.session_summary_user_template
+        )
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}(name={self.name!r}, backend={self.backend!r})"
         )
 
     @classmethod

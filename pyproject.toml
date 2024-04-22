@@ -19,7 +19,7 @@ noneprompt = "^0.1.9"
 typing-extensions = "^4.10.0"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.3.0"
+ruff = "^0.4.0"
 isort = "^5.10.1"
 black = "^24.0.0"
 nonemoji = "^0.1.2"
@@ -70,6 +70,7 @@ ignore = [
   "RUF002", # ambiguous-unicode-character-docstring
   "RUF003", # ambiguous-unicode-character-comment
 ]
+ignore-init-module-imports = false
 
 [tool.ruff.lint.flake8-pytest-style]
 fixture-parentheses = false

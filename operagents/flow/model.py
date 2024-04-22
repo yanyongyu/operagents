@@ -1,11 +1,8 @@
 from typing import TYPE_CHECKING
-from dataclasses import field, dataclass
 from typing_extensions import Self, override
 
 from operagents import backend
 from operagents.log import logger
-from operagents.timeline import Timeline
-from operagents.character import Character
 from operagents.exception import FlowError
 from operagents.utils import get_template_renderer
 from operagents.config import TemplateConfig, ModelFlowConfig
@@ -18,21 +15,39 @@ if TYPE_CHECKING:
     from operagents.backend import Backend, Message
 
 
-@dataclass
 class ModelFlow(Flow):
     type_ = "model"
 
-    backend: "Backend" = field()
+    def __init__(
+        self,
+        backend: "Backend",
+        *,
+        system_template: TemplateConfig,
+        user_template: TemplateConfig,
+        allowed_characters: list[str] | None = None,
+        begin_character: str | None = None,
+        fallback_character: str | None = None,
+    ):
+        self.backend: "Backend" = backend
 
-    system_template: TemplateConfig = field(kw_only=True)
-    user_template: TemplateConfig = field(kw_only=True)
-    allowed_characters: list[str] | None = field(default=None, kw_only=True)
-    begin_character: str | None = field(default=None, kw_only=True)
-    fallback_character: str | None = field(default=None, kw_only=True)
+        self.system_template = system_template
+        self.user_template = user_template
 
-    def __post_init__(self):
+        self.allowed_characters: list[str] | None = allowed_characters
+        self.begin_character: str | None = begin_character
+        self.fallback_character: str | None = fallback_character
+
         self.system_renderer = get_template_renderer(self.system_template)
         self.user_renderer = get_template_renderer(self.user_template)
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"backend={self.backend}, allowed_characters={self.allowed_characters}, "
+            f"begin_character={self.begin_character!r}, "
+            f"fallback_character={self.fallback_character!r}"
+            ")"
+        )
 
     @classmethod
     @override

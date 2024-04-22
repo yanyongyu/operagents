@@ -1,10 +1,21 @@
 import importlib
-from typing import Any, TypeVar
+from pathlib import Path
 from collections.abc import Generator
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import jinja2
+from pydantic_core import to_json
+from pydantic import SerializerFunctionWrapHandler
 
 from operagents.config import TemplateConfig
+
+from .log import logger
+
+if TYPE_CHECKING:
+    from operagents.prop import Prop
+    from operagents.scene import Scene
+    from operagents.opera import OperaState
+    from operagents.character import Character
 
 T = TypeVar("T")
 
@@ -53,3 +64,29 @@ def get_template_renderer(template: TemplateConfig) -> jinja2.Template:
         for func_name, func_path in template.custom_functions.items()
     )
     return env.from_string(template.content)
+
+
+def save_opera_state(state: "OperaState", path: Path):
+    path.write_bytes(to_json(state, indent=2))
+
+
+def scene_serializer(scene: "Scene") -> str:
+    return scene.name
+
+
+def character_serializer(character: "Character") -> str:
+    return character.name
+
+
+def prop_serializer(prop: "Prop") -> str:
+    return prop.name
+
+
+def any_serializer(value: Any, serializer: SerializerFunctionWrapHandler) -> Any:
+    try:
+        return serializer(value)
+    except Exception:
+        logger.opt(exception=True).warning(
+            f"Failed to serialize value with type {type(value)}. Use str() instead."
+        )
+        return str(value)

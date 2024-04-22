@@ -1,5 +1,4 @@
 from typing import TYPE_CHECKING
-from dataclasses import dataclass
 from typing_extensions import Self, override
 
 from operagents.config import PrefaceScenePrepareConfig
@@ -10,14 +9,21 @@ if TYPE_CHECKING:
     from operagents.timeline import Timeline
 
 
-@dataclass
 class PrefaceScenePrepare(ScenePrepare):
     type_ = "preface"
 
-    character_name: str
-    """The name of the character."""
-    content: str
-    """The content of the preface."""
+    def __init__(self, character_name: str, content: str):
+        self.character_name = character_name
+        """The name of the character."""
+        self.content = content
+        """The content of the preface."""
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"character_name={self.character_name!r}, content={self.content!r}"
+            ")"
+        )
 
     @classmethod
     @override

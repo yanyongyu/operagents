@@ -1,5 +1,4 @@
 import sys
-import json
 import asyncio
 import argparse
 from pathlib import Path
@@ -10,6 +9,7 @@ from pydantic import ValidationError
 
 from operagents.opera import Opera
 from operagents.version import VERSION
+from operagents.utils import save_opera_state
 from operagents.config import OperagentsConfig
 from operagents.log import logger, setup_logging
 
@@ -46,7 +46,7 @@ async def handle_run(
     result = await opera.run()
 
     if export is not None:
-        Path(export).write_text(json.dumps(result, indent=2), encoding="utf-8")
+        save_opera_state(result, Path(export))
 
 
 run = subcommands.add_parser(

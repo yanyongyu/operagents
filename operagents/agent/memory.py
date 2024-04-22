@@ -1,37 +1,44 @@
 from uuid import UUID
-from dataclasses import dataclass
 from typing_extensions import TypeVar
 from typing import TYPE_CHECKING, Any, Generic, Literal, Annotated, TypeAlias
 
-from pydantic import Field, BaseModel
+from pydantic import Field, BaseModel, ConfigDict, field_serializer
 
+from operagents.prop import Prop
+from operagents.scene import Scene
+from operagents.character import Character
 from operagents.exception import SceneFinished
+from operagents.utils import (
+    any_serializer,
+    prop_serializer,
+    scene_serializer,
+    character_serializer,
+)
 
 if TYPE_CHECKING:
-    from operagents.prop import Prop
-    from operagents.scene import Scene
     from operagents.timeline import Timeline
-    from operagents.character import Character
 
 
 P = TypeVar("P", bound=BaseModel, default=BaseModel)
 
 
-@dataclass(eq=False, kw_only=True)
-class AgentEventObserve:
+class AgentEventObserve(BaseModel):
     """Other agent acts observed by an agent.
 
     a.k.a. Agent short term memory.
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     type_: Literal["observe"] = "observe"
     session_id: UUID
-    scene: "Scene"
+    scene: Scene
     content: str
 
+    _serialize_scene = field_serializer("scene")(scene_serializer)
 
-@dataclass(eq=False, kw_only=True)
-class AgentEventSessionSummary:
+
+class AgentEventSessionSummary(BaseModel):
     """Summary of observed events for one whole scene session.
 
     a.k.a. Agent long term memory.
@@ -41,36 +48,52 @@ class AgentEventSessionSummary:
         No more `observe` or `act` events will be added after the summary.
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     type_: Literal["session_summary"] = "session_summary"
     session_id: UUID
-    scene: "Scene"
+    scene: Scene
     content: str
 
+    _serialize_scene = field_serializer("scene")(scene_serializer)
 
-@dataclass(eq=False, kw_only=True)
-class AgentEventAct:
+
+class AgentEventAct(BaseModel):
     """Agent self acts."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     type_: Literal["act"] = "act"
     session_id: UUID
-    scene: "Scene"
-    character: "Character"
+    scene: Scene
+    character: Character
     content: str
 
+    _serialize_scene = field_serializer("scene")(scene_serializer)
+    _serialize_character = field_serializer("character")(character_serializer)
 
-@dataclass(eq=False, kw_only=True)
-class AgentEventUseProp(Generic[P]):
+
+class AgentEventUseProp(BaseModel, Generic[P]):
     """Agent use prop."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     type_: Literal["use_prop"] = "use_prop"
     session_id: UUID
-    scene: "Scene"
-    character: "Character"
+    scene: Scene
+    character: Character
     usage_id: str
-    prop: "Prop[P]"
+    prop: Prop[P]
     prop_raw_params: str
-    prop_params: P | None
+    prop_params: BaseModel | None
     prop_result: Any
+
+    _serialize_scene = field_serializer("scene")(scene_serializer)
+    _serialize_character = field_serializer("character")(character_serializer)
+    _serialize_prop = field_serializer("prop")(prop_serializer)
+    _serialize_prop_result = field_serializer("prop_result", mode="wrap")(
+        any_serializer
+    )
 
 
 AgentEvent: TypeAlias = Annotated[

@@ -3,7 +3,6 @@ from typing_extensions import Self, override
 
 from noneprompt import Choice, ListPrompt
 
-from operagents.timeline import Timeline
 from operagents.character import Character
 from operagents.config import UserFlowConfig
 
