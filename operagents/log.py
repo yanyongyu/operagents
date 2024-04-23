@@ -32,9 +32,7 @@ class LoguruHandler(logging.Handler):
 
 def default_formatter(record: "loguru.Record") -> str:
     prefix = (
-        "<g>{time:MM-DD HH:mm:ss}</g> "
-        "[<lvl>{level}</lvl>] "
-        "<c><u>{name}</u></c> |"
+        "<g>{time:MM-DD HH:mm:ss}</g> [<lvl>{level}</lvl>] <c><u>{name}</u></c> |"
         # "<c>{function}:{line}</c>|"
     )
 

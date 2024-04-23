@@ -21,7 +21,6 @@ class OperaState(TypedDict):
 
 
 class Opera:
-
     def __init__(
         self,
         agents: dict[str, Agent],
