@@ -228,7 +228,7 @@ class Timeline:
         exc_type: type[BaseException] | None,
         exc_value: BaseException | None,
         traceback: TracebackType | None,
-    ) -> bool | None:
+    ) -> None:
         logger.debug("Timeline ends.")
 
         try:
