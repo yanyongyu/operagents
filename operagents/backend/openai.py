@@ -1,8 +1,8 @@
 import abc
 import asyncio
 from typing_extensions import Self, override
-from collections.abc import Callable, Awaitable
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING, Literal, cast, overload
+from collections.abc import Callable, Awaitable, AsyncGenerator
 
 import openai
 from pydantic import ValidationError
@@ -18,7 +18,7 @@ from operagents.config import (
     OpenaiBackendFunctionToolChoiceConfig,
 )
 
-from ._base import Backend, Message, PropMessage, GenerateResponse
+from ._base import Backend, Message, PropMessage, GenerateResponse, GeneratePropUsage
 
 if TYPE_CHECKING:
     from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
@@ -246,39 +246,56 @@ class OpenAIBackend(Backend):
                 },
             }
 
+    @overload
+    async def generate(
+        self,
+        timeline: "Timeline",
+        messages: list[Message],
+        props: None = None,
+    ) -> AsyncGenerator[GenerateResponse, None]: ...
+
+    @overload
+    async def generate(
+        self,
+        timeline: "Timeline",
+        messages: list[Message],
+        props: list["Prop"],
+    ) -> AsyncGenerator[GenerateResponse | GeneratePropUsage, None]: ...
+
     @override
     async def generate(
         self,
         timeline: "Timeline",
         messages: list[Message],
         props: list["Prop"] | None = None,
-    ) -> GenerateResponse:
-        openai_messages = self._messages_to_openai(messages)
-
+    ) -> AsyncGenerator[GenerateResponse | GeneratePropUsage, None]:
         tools: list["ChatCompletionToolParam"] = (
             [self._prop_to_tool(prop) for prop in props] if props else []
         )
-        if props:
-            response = await self.client.chat.completions.create(
-                model=self.model,
-                temperature=self.temperature,
-                response_format={"type": self.response_format},
-                messages=openai_messages,
-                tools=tools,
-                tool_choice=(
-                    await self.tool_choice.choose(timeline, openai_messages, props)
-                ),
-            )
-        else:
-            response = await self.client.chat.completions.create(
-                model=self.model,
-                temperature=self.temperature,
-                response_format={"type": self.response_format},
-                messages=openai_messages,
-            )
+        openai_messages = self._messages_to_openai(messages)
 
+        async def _make_completion():
+            if props:
+                return await self.client.chat.completions.create(
+                    model=self.model,
+                    temperature=self.temperature,
+                    response_format={"type": self.response_format},
+                    messages=openai_messages,
+                    tools=tools,
+                    tool_choice=(
+                        await self.tool_choice.choose(timeline, openai_messages, props)
+                    ),
+                )
+            else:
+                return await self.client.chat.completions.create(
+                    model=self.model,
+                    temperature=self.temperature,
+                    response_format={"type": self.response_format},
+                    messages=openai_messages,
+                )
+
+        response = await _make_completion()
         reply = response.choices[0].message
-        prop_usage: list[PropMessage] = []
 
         while reply.tool_calls:
             if not props:
@@ -294,19 +311,43 @@ class OpenAIBackend(Backend):
             )
 
             available_props = {prop.name: prop for prop in props}
-            results = await asyncio.gather(
-                *(
-                    self._use_prop(
-                        timeline,
-                        available_props[call.function.name],
-                        call.id,
-                        call.function.arguments,
+
+            # wait for all prop result or first exception
+            results: list[PropMessage] = []
+            done, pending = await asyncio.wait(
+                {
+                    asyncio.create_task(
+                        self._use_prop(
+                            timeline,
+                            available_props[call.function.name],
+                            call.id,
+                            call.function.arguments,
+                        )
                     )
                     for call in reply.tool_calls
-                )
+                },
+                return_when=asyncio.FIRST_EXCEPTION,
             )
-            prop_usage.extend(results)
+            results.extend(
+                msg for t in done if not t.cancelled() and (msg := t.result())
+            )
+            if pending:
+                # first exception occurred
+                exc = next(
+                    e for t in done if not t.cancelled() and (e := t.exception())
+                )
+                # wait for all remaining tasks completed
+                remain, _ = await asyncio.wait(
+                    pending, return_when=asyncio.ALL_COMPLETED
+                )
+                results.extend(
+                    msg for t in remain if not t.cancelled() and (msg := t.result())
+                )
+                yield GeneratePropUsage(props=results)
+                # reraise the first exception
+                raise exc
 
+            yield GeneratePropUsage(props=results)
             openai_messages.extend(
                 cast(
                     "ChatCompletionToolMessageParam",
@@ -319,26 +360,9 @@ class OpenAIBackend(Backend):
                 for result in results
             )
 
-            if props:
-                response = await self.client.chat.completions.create(
-                    model=self.model,
-                    temperature=self.temperature,
-                    response_format={"type": self.response_format},
-                    messages=openai_messages,
-                    tools=tools,
-                    tool_choice=(
-                        await self.tool_choice.choose(timeline, openai_messages, props)
-                    ),
-                )
-            else:
-                response = await self.client.chat.completions.create(
-                    model=self.model,
-                    temperature=self.temperature,
-                    response_format={"type": self.response_format},
-                    messages=openai_messages,
-                )
+            response = await _make_completion()
             reply = response.choices[0].message
 
         if reply.content is None:
             raise BackendError("OpenAI did not return a text response")
-        return GenerateResponse(content=reply.content, prop_usage=prop_usage)
+        yield GenerateResponse(content=reply.content)

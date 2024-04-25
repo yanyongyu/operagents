@@ -82,23 +82,26 @@ class ModelFlow(Flow):
         logger.debug(
             "Choosing next character with messages: {messages}", messages=messages
         )
-        response = await self.backend.generate(timeline, messages)
-        logger.debug("Flow response: {response}", response=response)
+        async for response in self.backend.generate(timeline, messages):
+            logger.debug("Flow response: {response}", response=response)
 
-        allowed_characters = (
-            list(timeline.current_scene.characters)
-            if self.allowed_characters is None
-            else self.allowed_characters
-        )
-        for character in allowed_characters:
-            if character in response:
-                return timeline.current_scene.characters[character]
-        if self.fallback_character is not None:
-            return timeline.current_scene.characters[self.fallback_character]
-        raise FlowError(
-            "The model flow failed to choose the next character. "
-            "No fallback character was provided."
-        )
+            allowed_characters = (
+                list(timeline.current_scene.characters)
+                if self.allowed_characters is None
+                else self.allowed_characters
+            )
+            for character in allowed_characters:
+                if character in response:
+                    return timeline.current_scene.characters[character]
+            if self.fallback_character is not None:
+                return timeline.current_scene.characters[self.fallback_character]
+            raise FlowError(
+                "The model flow failed to choose the next character. "
+                "No fallback character was provided."
+            )
+
+        # This should never happen
+        raise RuntimeError("The backend did not return a response.")
 
     @override
     async def begin(self, timeline: "Timeline") -> "Character":

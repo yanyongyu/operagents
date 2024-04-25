@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+from collections.abc import AsyncGenerator
 from typing_extensions import Self, override
 
 from noneprompt import InputPrompt, CancelledError
@@ -30,11 +31,9 @@ class UserBackend(Backend):
         timeline: "Timeline",
         messages: list[Message],
         props: list["Prop"] | None = None,
-    ) -> GenerateResponse:
+    ) -> AsyncGenerator[GenerateResponse, None]:
         try:
-            return GenerateResponse(
-                content=await InputPrompt("You: ").prompt_async(), prop_usage=[]
-            )
+            yield GenerateResponse(content=await InputPrompt("You: ").prompt_async())
         except CancelledError:
             logger.info("User cancelled input.")
             raise OperaFinished() from None

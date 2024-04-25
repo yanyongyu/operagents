@@ -8,6 +8,7 @@ Function parameters validation failed:
 Field name: {{ err["loc"] | join(".") }}
 Error message: {{ err["msg"] }}
 {%- endfor %}
+Recall the function correctly, fix the errors.
 """.strip()
 
 # agent config

@@ -7,6 +7,7 @@ from operagents.log import logger
 from operagents.utils import get_template_renderer
 from operagents.exception import TimelineNotStarted
 from operagents.config import AgentConfig, TemplateConfig
+from operagents.backend import Backend, Message, GenerateResponse, GeneratePropUsage
 from operagents.timeline.event import TimelineEventSessionAct, TimelineEventSessionEnd
 
 from .memory import AgentEvent as AgentEvent
@@ -20,7 +21,6 @@ from .memory import (
 
 if TYPE_CHECKING:
     from operagents.timeline import Timeline
-    from operagents.backend import Backend, Message, PropMessage
 
 
 class Agent:
@@ -120,9 +120,7 @@ class Agent:
             )
         )
 
-    def _do_response(
-        self, timeline: "Timeline", response: str, prop_usages: list["PropMessage"]
-    ) -> None:
+    def _do_response(self, timeline: "Timeline", response: str) -> None:
         """Make the agent respond to a message."""
         self.logger.info(
             "{response}",
@@ -130,20 +128,6 @@ class Agent:
             scene=timeline.current_scene,
             character=timeline.current_character,
         )
-
-        for prop_message in prop_usages:
-            self.memory.remember(
-                AgentEventUseProp(
-                    session_id=timeline.current_session_id,
-                    scene=timeline.current_scene,
-                    character=timeline.current_character,
-                    usage_id=prop_message["usage_id"],
-                    prop=prop_message["prop"],
-                    prop_raw_params=prop_message["raw_params"],
-                    prop_params=prop_message["params"],
-                    prop_result=prop_message["result"],
-                )
-            )
 
         self.memory.remember(
             AgentEventAct(
@@ -175,7 +159,7 @@ class Agent:
 
         if new_message is not None:
             self._do_observe(timeline, new_message)
-        self._do_response(timeline, response, [])
+        self._do_response(timeline, response)
 
         return TimelineEventSessionAct(
             session_id=timeline.current_session_id,
@@ -216,17 +200,34 @@ class Agent:
             prop_count=len(props),
             messages=messages,
         )
-        response = await self.backend.generate(timeline, messages, props)
+        async for response in self.backend.generate(timeline, messages, props):
+            if isinstance(response, GeneratePropUsage):
+                for prop_message in response.props:
+                    self.memory.remember(
+                        AgentEventUseProp(
+                            session_id=timeline.current_session_id,
+                            scene=timeline.current_scene,
+                            character=timeline.current_character,
+                            usage_id=prop_message["usage_id"],
+                            prop=prop_message["prop"],
+                            prop_raw_params=prop_message["raw_params"],
+                            prop_params=prop_message["params"],
+                            prop_result=prop_message["result"],
+                        )
+                    )
+            elif isinstance(response, GenerateResponse):
+                self._do_observe(timeline, new_message)
+                self._do_response(timeline, response.content)
 
-        self._do_observe(timeline, new_message)
-        self._do_response(timeline, response.content, response.prop_usage)
+                return TimelineEventSessionAct(
+                    session_id=timeline.current_session_id,
+                    scene=timeline.current_scene,
+                    character=timeline.current_character,
+                    content=response.content,
+                )
 
-        return TimelineEventSessionAct(
-            session_id=timeline.current_session_id,
-            scene=timeline.current_scene,
-            character=timeline.current_character,
-            content=response.content,
-        )
+        # This should never happen
+        raise RuntimeError("The backend did not return a response.")
 
     async def summary(
         self, timeline: "Timeline", event: TimelineEventSessionEnd
@@ -265,19 +266,22 @@ class Agent:
             scene=scene,
             messages=messages,
         )
-        response = await self.backend.generate(timeline, messages)
-        self.logger.debug(
-            "Summary: {response}",
-            session_id=session_id,
-            scene=scene,
-            response=response.content,
-        )
-
-        self.memory.remember(
-            AgentEventSessionSummary(
-                session_id=session_id, scene=scene, content=response.content
+        async for response in self.backend.generate(timeline, messages):
+            self.logger.debug(
+                "Summary: {response}",
+                session_id=session_id,
+                scene=scene,
+                response=response.content,
             )
-        )
+
+            self.memory.remember(
+                AgentEventSessionSummary(
+                    session_id=session_id, scene=scene, content=response.content
+                )
+            )
+
+        # This should never happen
+        raise RuntimeError("The backend did not return a response.")
 
     async def __aenter__(self) -> Self:
         self._memory = AgentMemory()

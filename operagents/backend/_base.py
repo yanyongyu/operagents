@@ -1,4 +1,5 @@
 import abc
+from collections.abc import AsyncGenerator
 from typing_extensions import Self, TypeVar, TypedDict
 from typing import (
     TYPE_CHECKING,
@@ -9,6 +10,7 @@ from typing import (
     Annotated,
     TypeAlias,
     NamedTuple,
+    overload,
 )
 
 from pydantic import Field, BaseModel
@@ -65,10 +67,17 @@ Message: TypeAlias = Annotated[
 
 
 class GenerateResponse(NamedTuple):
-    """The response from generating messages."""
+    """The response of generating messages."""
 
     content: str
-    prop_usage: list[PropMessage]
+    """The content of the generated message."""
+
+
+class GeneratePropUsage(NamedTuple):
+    """The prop usages of generating messages."""
+
+    props: list[PropMessage]
+    """The prop messages that were used."""
 
 
 class Backend(abc.ABC):
@@ -83,12 +92,31 @@ class Backend(abc.ABC):
         """Create a backend from a configuration."""
         raise NotImplementedError
 
+    @overload
+    @abc.abstractmethod
+    async def generate(
+        self,
+        timeline: "Timeline",
+        messages: list[Message],
+        props: None = None,
+    ) -> AsyncGenerator[GenerateResponse, None]: ...
+
+    @overload
+    @abc.abstractmethod
+    async def generate(
+        self,
+        timeline: "Timeline",
+        messages: list[Message],
+        props: list["Prop"],
+    ) -> AsyncGenerator[GenerateResponse | GeneratePropUsage, None]: ...
+
     @abc.abstractmethod
     async def generate(
         self,
         timeline: "Timeline",
         messages: list[Message],
         props: list["Prop"] | None = None,
-    ) -> GenerateResponse:
+    ) -> AsyncGenerator[GenerateResponse | GeneratePropUsage, None]:
         """Generate a message based on the given messages and props."""
         raise NotImplementedError
+        yield

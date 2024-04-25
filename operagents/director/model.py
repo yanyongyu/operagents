@@ -79,18 +79,21 @@ class ModelDirector(Director):
             },
         ]
         logger.debug("Choosing next scene with messages: {messages}", messages=messages)
-        response = await self.backend.generate(timeline, messages)
-        logger.debug("Director response: {response}", response=response.content)
+        async for response in self.backend.generate(timeline, messages):
+            logger.debug("Director response: {response}", response=response.content)
 
-        if self.finish_flag is not None and self.finish_flag in response.content:
-            raise OperaFinished()
+            if self.finish_flag is not None and self.finish_flag in response.content:
+                raise OperaFinished()
 
-        allowed_scenes = (
-            timeline.opera.scenes
-            if self.allowed_scenes is None
-            else self.allowed_scenes
-        )
-        for scene in allowed_scenes:
-            if scene in response.content:
-                return timeline.opera.scenes[scene]
-        return None
+            allowed_scenes = (
+                timeline.opera.scenes
+                if self.allowed_scenes is None
+                else self.allowed_scenes
+            )
+            for scene in allowed_scenes:
+                if scene in response.content:
+                    return timeline.opera.scenes[scene]
+            return None
+
+        # This should never happen
+        raise RuntimeError("The backend did not return a response.")

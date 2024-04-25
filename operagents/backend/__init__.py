@@ -10,6 +10,7 @@ from ._base import SystemMessage as SystemMessage
 from .openai import OpenAIBackend as OpenAIBackend
 from ._base import AssistantMessage as AssistantMessage
 from ._base import GenerateResponse as GenerateResponse
+from ._base import GeneratePropUsage as GeneratePropUsage
 
 all_backend_types: dict[str, type[Backend]] = {
     b.type_: b for b in get_all_subclasses(Backend)
