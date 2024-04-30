@@ -200,6 +200,8 @@ class Agent:
             prop_count=len(props),
             messages=messages,
         )
+
+        self._do_observe(timeline, new_message)
         async for response in self.backend.generate(timeline, messages, props):
             if isinstance(response, GeneratePropUsage):
                 for prop_message in response.props:
@@ -216,9 +218,7 @@ class Agent:
                         )
                     )
             elif isinstance(response, GenerateResponse):
-                self._do_observe(timeline, new_message)
                 self._do_response(timeline, response.content)
-
                 return TimelineEventSessionAct(
                     session_id=timeline.current_session_id,
                     scene=timeline.current_scene,

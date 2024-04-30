@@ -2,7 +2,7 @@ from uuid import UUID
 from typing_extensions import TypeVar
 from typing import TYPE_CHECKING, Any, Generic, Literal, Annotated, TypeAlias
 
-from pydantic import Field, BaseModel, ConfigDict, field_serializer
+from pydantic import Field, BaseModel, ConfigDict, SerializeAsAny, field_serializer
 
 from operagents.prop import Prop
 from operagents.scene import Scene
@@ -85,7 +85,7 @@ class AgentEventUseProp(BaseModel, Generic[P]):
     usage_id: str
     prop: Prop[P]
     prop_raw_params: str
-    prop_params: BaseModel | None
+    prop_params: SerializeAsAny[BaseModel] | None
     prop_result: Any
 
     _serialize_scene = field_serializer("scene")(scene_serializer)
