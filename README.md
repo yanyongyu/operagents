@@ -138,8 +138,9 @@ agents:
 from typing import Self
 
 from operagents.prop import Prop
-from operagents.backend import Backend, Message
+from operagents.timeline import Timeline
 from operagents.config import CustomBackendConfig
+from operagents.backend import Backend, Message, GenerateResponse, GeneratePropUsage
 
 
 class CustomBackend(Backend):
@@ -147,10 +148,26 @@ class CustomBackend(Backend):
     def from_config(cls, config: CustomBackendConfig) -> Self:
         return cls()
 
+    @overload
     async def generate(
-        self, messages: list[Message], props: list[Prop] | None = None
-    ) -> str:
-        return ""
+        self,
+        timeline: Timeline,
+        messages: list[Message],
+        props: None = None,
+    ) -> AsyncGenerator[GenerateResponse, None]: ...
+
+    @overload
+    async def generate(
+        self,
+        timeline: Timeline,
+        messages: list[Message],
+        props: list[Prop],
+    ) -> AsyncGenerator[GenerateResponse | GeneratePropUsage, None]: ...
+
+    async def generate(
+        self, timeline: Timeline, messages: list[Message], props: list[Prop] | None = None
+    ) -> AsyncGenerator[GenerateResponse | GeneratePropUsage, None]:
+        yield GenerateResponse(content="")
 ```
 
 The next part of the agent config is the system/user template used to generate the context input for the language model. You can use the `system_template`/`user_template` key to specify the system/user template. Here is an example of the template config:
@@ -637,6 +654,36 @@ operagents run --log-level DEBUG config.yaml
 ```
 
 More commands and options can be found by running `operagents --help`.
+
+If you want to run the opera programmatically, you can use the `opera.run` function:
+
+```python
+import asyncio
+from pathlib import Path
+
+import yaml
+from operagents.opera import Opera
+from operagents.log import setup_logging
+from operagents.config import OperagentsConfig
+
+
+async def main():
+    # if you want to setup the default logging for operagents
+    setup_logging("INFO")
+
+    # load the opera from config file
+    opera = Opera.from_config(
+        OperagentsConfig.model_validate(
+            yaml.safe_load(Path("./config.yaml").read_text(encoding="utf-8"))
+        )
+    )
+
+    finish_state = await opera.run()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
 
 ## Examples
 
