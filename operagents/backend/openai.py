@@ -247,7 +247,7 @@ class OpenAIBackend(Backend):
             }
 
     @overload
-    async def generate(
+    def generate(
         self,
         timeline: "Timeline",
         messages: list[Message],
@@ -255,7 +255,7 @@ class OpenAIBackend(Backend):
     ) -> AsyncGenerator[GenerateResponse, None]: ...
 
     @overload
-    async def generate(
+    def generate(
         self,
         timeline: "Timeline",
         messages: list[Message],

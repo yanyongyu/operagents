@@ -94,7 +94,7 @@ class Backend(abc.ABC):
 
     @overload
     @abc.abstractmethod
-    async def generate(
+    def generate(
         self,
         timeline: "Timeline",
         messages: list[Message],
@@ -103,7 +103,7 @@ class Backend(abc.ABC):
 
     @overload
     @abc.abstractmethod
-    async def generate(
+    def generate(
         self,
         timeline: "Timeline",
         messages: list[Message],
@@ -111,7 +111,7 @@ class Backend(abc.ABC):
     ) -> AsyncGenerator[GenerateResponse | GeneratePropUsage, None]: ...
 
     @abc.abstractmethod
-    async def generate(
+    def generate(
         self,
         timeline: "Timeline",
         messages: list[Message],
@@ -119,4 +119,3 @@ class Backend(abc.ABC):
     ) -> AsyncGenerator[GenerateResponse | GeneratePropUsage, None]:
         """Generate a message based on the given messages and props."""
         raise NotImplementedError
-        yield
