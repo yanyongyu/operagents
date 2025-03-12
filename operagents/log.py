@@ -1,6 +1,6 @@
-import sys
 import inspect
 import logging
+import sys
 from typing import TYPE_CHECKING
 
 import loguru

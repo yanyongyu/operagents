@@ -9,8 +9,8 @@ from operagents.config import UserFlowConfig
 from ._base import Flow
 
 if TYPE_CHECKING:
-    from operagents.timeline import Timeline
     from operagents.character import Character
+    from operagents.timeline import Timeline
 
 
 class UserFlow(Flow):

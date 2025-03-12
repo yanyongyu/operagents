@@ -2,17 +2,17 @@ from typing import TYPE_CHECKING
 from typing_extensions import Self, override
 
 from operagents import backend
-from operagents.log import logger
+from operagents.config import ModelDirectorConfig, TemplateConfig
 from operagents.exception import OperaFinished
+from operagents.log import logger
 from operagents.utils import get_template_renderer
-from operagents.config import TemplateConfig, ModelDirectorConfig
 
 from ._base import Director
 
 if TYPE_CHECKING:
+    from operagents.backend import Backend, Message
     from operagents.scene import Scene
     from operagents.timeline import Timeline
-    from operagents.backend import Backend, Message
 
 
 class ModelDirector(Director):

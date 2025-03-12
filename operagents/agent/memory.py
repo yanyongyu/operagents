@@ -1,18 +1,18 @@
-from uuid import UUID
+from typing import TYPE_CHECKING, Annotated, Any, Generic, Literal, TypeAlias
 from typing_extensions import TypeVar
-from typing import TYPE_CHECKING, Any, Generic, Literal, Annotated, TypeAlias
+from uuid import UUID
 
-from pydantic import Field, BaseModel, ConfigDict, SerializeAsAny, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, SerializeAsAny, field_serializer
 
-from operagents.prop import Prop
-from operagents.scene import Scene
 from operagents.character import Character
 from operagents.exception import SceneFinished
+from operagents.prop import Prop
+from operagents.scene import Scene
 from operagents.utils import (
     any_serializer,
+    character_serializer,
     prop_serializer,
     scene_serializer,
-    character_serializer,
 )
 
 if TYPE_CHECKING:

@@ -9,7 +9,6 @@
     "vscode": {
       "settings": {
         "python.analysis.diagnosticMode": "workspace",
-        "ruff.organizeImports": false,
         "[python]": {
           "editor.defaultFormatter": "charliermarsh.ruff",
           "editor.codeActionsOnSave": {
@@ -46,7 +45,6 @@
       "extensions": [
         "ms-python.python",
         "ms-python.vscode-pylance",
-        "ms-python.isort",
         "charliermarsh.ruff",
         "EditorConfig.EditorConfig",
         "esbenp.prettier-vscode"

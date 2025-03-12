@@ -1,11 +1,11 @@
 from typing import TYPE_CHECKING
 from typing_extensions import Self
 
-from operagents.flow import Flow
-from operagents import flow, director
-from operagents.director import Director
-from operagents.config import SceneConfig
+from operagents import director, flow
 from operagents.character import Character
+from operagents.config import SceneConfig
+from operagents.director import Director
+from operagents.flow import Flow
 
 from . import prepare
 from .prepare import ScenePrepare

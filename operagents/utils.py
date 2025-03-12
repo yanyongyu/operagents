@@ -1,21 +1,21 @@
+from collections.abc import Generator
 import importlib
 from pathlib import Path
-from collections.abc import Generator
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import jinja2
-from pydantic_core import to_json
 from pydantic import SerializerFunctionWrapHandler
+from pydantic_core import to_json
 
 from operagents.config import TemplateConfig
 
 from .log import logger
 
 if TYPE_CHECKING:
+    from operagents.character import Character
+    from operagents.opera import OperaState
     from operagents.prop import Prop
     from operagents.scene import Scene
-    from operagents.opera import OperaState
-    from operagents.character import Character
 
 T = TypeVar("T")
 

@@ -3,20 +3,20 @@ from typing import TYPE_CHECKING
 from typing_extensions import Self
 
 from operagents import backend
-from operagents.log import logger
-from operagents.utils import get_template_renderer
-from operagents.exception import TimelineNotStarted
+from operagents.backend import Backend, GeneratePropUsage, GenerateResponse, Message
 from operagents.config import AgentConfig, TemplateConfig
-from operagents.backend import Backend, Message, GenerateResponse, GeneratePropUsage
+from operagents.exception import TimelineNotStarted
+from operagents.log import logger
 from operagents.timeline.event import TimelineEventSessionAct, TimelineEventSessionEnd
+from operagents.utils import get_template_renderer
 
 from .memory import AgentEvent as AgentEvent
 from .memory import (
-    AgentMemory,
     AgentEventAct,
     AgentEventObserve,
-    AgentEventUseProp,
     AgentEventSessionSummary,
+    AgentEventUseProp,
+    AgentMemory,
 )
 
 if TYPE_CHECKING:

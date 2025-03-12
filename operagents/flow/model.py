@@ -2,17 +2,17 @@ from typing import TYPE_CHECKING
 from typing_extensions import Self, override
 
 from operagents import backend
-from operagents.log import logger
+from operagents.config import ModelFlowConfig, TemplateConfig
 from operagents.exception import FlowError
+from operagents.log import logger
 from operagents.utils import get_template_renderer
-from operagents.config import TemplateConfig, ModelFlowConfig
 
 from ._base import Flow
 
 if TYPE_CHECKING:
-    from operagents.timeline import Timeline
-    from operagents.character import Character
     from operagents.backend import Backend, Message
+    from operagents.character import Character
+    from operagents.timeline import Timeline
 
 
 class ModelFlow(Flow):

@@ -1,15 +1,15 @@
-from typing import TYPE_CHECKING
 from collections.abc import AsyncGenerator
+from typing import TYPE_CHECKING
 from typing_extensions import Self, override
 
-from noneprompt import InputPrompt, CancelledError
+from noneprompt import CancelledError, InputPrompt
 
-from operagents.prop import Prop
-from operagents.log import logger
-from operagents.exception import OperaFinished
 from operagents.config import UserBackendConfig
+from operagents.exception import OperaFinished
+from operagents.log import logger
+from operagents.prop import Prop
 
-from ._base import Backend, Message, GenerateResponse
+from ._base import Backend, GenerateResponse, Message
 
 if TYPE_CHECKING:
     from operagents.timeline import Timeline

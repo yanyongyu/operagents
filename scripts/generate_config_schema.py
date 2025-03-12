@@ -1,6 +1,6 @@
-import sys
 import json
 from pathlib import Path
+import sys
 
 from operagents import OperagentsConfig
 

@@ -1,6 +1,6 @@
 import abc
-from typing_extensions import Self
 from typing import TYPE_CHECKING, ClassVar
+from typing_extensions import Self
 
 from operagents.config import ScenePrepareConfig
 

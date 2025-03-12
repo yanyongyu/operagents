@@ -1,11 +1,11 @@
+from typing import Annotated, Literal, TypeAlias
 from uuid import UUID
-from typing import Literal, Annotated, TypeAlias
 
-from pydantic import Field, BaseModel, ConfigDict, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
-from operagents.scene import Scene
 from operagents.character import Character
-from operagents.utils import scene_serializer, character_serializer
+from operagents.scene import Scene
+from operagents.utils import character_serializer, scene_serializer
 
 
 class TimelineEventStart(BaseModel):

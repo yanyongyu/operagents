@@ -1,12 +1,12 @@
+from typing import Annotated, Literal, TypeAlias
 from typing_extensions import Self
-from typing import Literal, Annotated, TypeAlias
 
-from pydantic import Field, BaseModel, ConfigDict, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from .const import (
-    FUNCTION_PROP_EXCEPTION_TEMPLATE,
-    AGENT_SESSION_SUMMARY_USER_TEMPLATE,
     AGENT_SESSION_SUMMARY_SYSTEM_TEMPLATE,
+    AGENT_SESSION_SUMMARY_USER_TEMPLATE,
+    FUNCTION_PROP_EXCEPTION_TEMPLATE,
     OPENAI_BACKEND_PROP_VALIDATION_ERROR_TEMPLATE,
 )
 

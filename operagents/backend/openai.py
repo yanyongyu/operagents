@@ -1,39 +1,39 @@
 import abc
 import asyncio
-from typing_extensions import Self, override
+from collections.abc import AsyncGenerator, Awaitable, Callable
 from typing import TYPE_CHECKING, Literal, cast, overload
-from collections.abc import Callable, Awaitable, AsyncGenerator
+from typing_extensions import Self, override
 
 import openai
 from pydantic import ValidationError
 
-from operagents.prop import Prop
-from operagents.exception import BackendError
-from operagents.utils import resolve_dot_notation, get_template_renderer
 from operagents.config import (
-    TemplateConfig,
-    OpenaiBackendConfig,
-    OpenaiBackendToolChoiceConfig,
     OpenaiBackendAutoToolChoiceConfig,
+    OpenaiBackendConfig,
     OpenaiBackendFunctionToolChoiceConfig,
+    OpenaiBackendToolChoiceConfig,
+    TemplateConfig,
 )
+from operagents.exception import BackendError
+from operagents.prop import Prop
+from operagents.utils import get_template_renderer, resolve_dot_notation
 
-from ._base import Backend, Message, PropMessage, GenerateResponse, GeneratePropUsage
+from ._base import Backend, GeneratePropUsage, GenerateResponse, Message, PropMessage
 
 if TYPE_CHECKING:
-    from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
-    from openai.types.chat.chat_completion_message_param import (
-        ChatCompletionMessageParam,
-    )
-    from openai.types.chat.chat_completion_tool_message_param import (
-        ChatCompletionToolMessageParam,
-    )
     from openai.types.chat.chat_completion_assistant_message_param import (
         ChatCompletionAssistantMessageParam,
+    )
+    from openai.types.chat.chat_completion_message_param import (
+        ChatCompletionMessageParam,
     )
     from openai.types.chat.chat_completion_tool_choice_option_param import (
         ChatCompletionToolChoiceOptionParam,
     )
+    from openai.types.chat.chat_completion_tool_message_param import (
+        ChatCompletionToolMessageParam,
+    )
+    from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
 
     from operagents.timeline import Timeline
 
@@ -279,7 +279,7 @@ class OpenAIBackend(Backend):
                 return await self.client.chat.completions.create(
                     model=self.model,
                     temperature=self.temperature,
-                    response_format={"type": self.response_format},
+                    response_format={"type": self.response_format},  # type: ignore
                     messages=openai_messages,
                     tools=tools,
                     tool_choice=(
@@ -290,7 +290,7 @@ class OpenAIBackend(Backend):
                 return await self.client.chat.completions.create(
                     model=self.model,
                     temperature=self.temperature,
-                    response_format={"type": self.response_format},
+                    response_format={"type": self.response_format},  # type: ignore
                     messages=openai_messages,
                 )
 

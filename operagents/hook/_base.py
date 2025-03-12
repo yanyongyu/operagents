@@ -1,19 +1,19 @@
 import abc
-from typing_extensions import Self
 from typing import TYPE_CHECKING, ClassVar
+from typing_extensions import Self
 
-from operagents.log import logger
 from operagents.config import HookConfig
+from operagents.log import logger
 
 if TYPE_CHECKING:
     from operagents.timeline import Timeline
     from operagents.timeline.event import (
         TimelineEvent,
         TimelineEventEnd,
-        TimelineEventStart,
         TimelineEventSessionAct,
         TimelineEventSessionEnd,
         TimelineEventSessionStart,
+        TimelineEventStart,
     )
 
 

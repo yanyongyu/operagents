@@ -2,8 +2,8 @@ from operagents.config import ScenePrepareConfig
 from operagents.utils import get_all_subclasses, resolve_dot_notation
 
 from ._base import ScenePrepare as ScenePrepare
-from .preface import PrefaceScenePrepare as PrefaceScenePrepare
 from .function import FunctionScenePrepare as FunctionScenePrepare
+from .preface import PrefaceScenePrepare as PrefaceScenePrepare
 
 all_scene_prerpare_types: dict[str, type[ScenePrepare]] = {
     p.type_: p for p in get_all_subclasses(ScenePrepare)

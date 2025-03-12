@@ -1,12 +1,12 @@
 import abc
-from typing_extensions import Self
 from typing import TYPE_CHECKING, ClassVar
+from typing_extensions import Self
 
 from operagents.config import FlowConfig
 
 if TYPE_CHECKING:
-    from operagents.timeline import Timeline
     from operagents.character import Character
+    from operagents.timeline import Timeline
 
 
 class Flow(abc.ABC):

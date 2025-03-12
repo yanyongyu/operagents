@@ -5,8 +5,8 @@ from operagents import prop
 from operagents.config import CharacterConfig
 
 if TYPE_CHECKING:
-    from operagents.prop import Prop
     from operagents.agent import Agent
+    from operagents.prop import Prop
     from operagents.timeline import Timeline
     from operagents.timeline.event import TimelineEventSessionAct
 

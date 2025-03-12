@@ -2,9 +2,9 @@ from operagents.config import FlowConfig
 from operagents.utils import get_all_subclasses, resolve_dot_notation
 
 from ._base import Flow as Flow
-from .user import UserFlow as UserFlow
 from .model import ModelFlow as ModelFlow
 from .order import OrderFlow as OrderFlow
+from .user import UserFlow as UserFlow
 
 all_flow_types: dict[str, type[Flow]] = {f.type_: f for f in get_all_subclasses(Flow)}
 

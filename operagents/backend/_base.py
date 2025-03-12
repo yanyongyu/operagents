@@ -1,19 +1,19 @@
 import abc
 from collections.abc import AsyncGenerator
-from typing_extensions import Self, TypeVar, TypedDict
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
+    ClassVar,
     Generic,
     Literal,
-    ClassVar,
-    Annotated,
-    TypeAlias,
     NamedTuple,
+    TypeAlias,
     overload,
 )
+from typing_extensions import Self, TypedDict, TypeVar
 
-from pydantic import Field, BaseModel
+from pydantic import BaseModel, Field
 
 from operagents.config import BackendConfig
 

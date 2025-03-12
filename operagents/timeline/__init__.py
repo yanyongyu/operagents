@@ -1,29 +1,29 @@
-import weakref
-from uuid import UUID, uuid4
+from contextlib import AsyncExitStack
+from dataclasses import dataclass
 from types import TracebackType
 from typing import TYPE_CHECKING
-from dataclasses import dataclass
 from typing_extensions import Self
-from contextlib import AsyncExitStack
+from uuid import UUID, uuid4
+import weakref
 
-from operagents.log import logger
 from operagents.exception import SceneNotPrepared, TimelineNotStarted
+from operagents.log import logger
 
 from .event import TimelineEvent as TimelineEvent
 from .event import (
     TimelineEventEnd,
-    TimelineEventStart,
-    TimelineSessionEvent,
     TimelineEventSessionAct,
     TimelineEventSessionEnd,
     TimelineEventSessionStart,
+    TimelineEventStart,
+    TimelineSessionEvent,
 )
 
 if TYPE_CHECKING:
     from operagents.agent import Agent
+    from operagents.character import Character
     from operagents.opera import Opera
     from operagents.scene import Scene
-    from operagents.character import Character
 
 
 @dataclass(eq=False, kw_only=True)

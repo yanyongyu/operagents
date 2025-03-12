@@ -1,13 +1,13 @@
+from collections.abc import Awaitable, Callable
 import inspect
-from collections.abc import Callable, Awaitable
-from typing_extensions import Self, TypeVar, override
 from typing import TYPE_CHECKING, Any, ParamSpec, cast
+from typing_extensions import Self, TypeVar, override
 
 from pydantic import BaseModel
 
-from operagents.exception import PropError, OperagentsException
-from operagents.config import TemplateConfig, FunctionPropConfig
-from operagents.utils import resolve_dot_notation, get_template_renderer
+from operagents.config import FunctionPropConfig, TemplateConfig
+from operagents.exception import OperagentsException, PropError
+from operagents.utils import get_template_renderer, resolve_dot_notation
 
 from ._base import Prop
 

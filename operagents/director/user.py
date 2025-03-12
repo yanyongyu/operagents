@@ -3,8 +3,8 @@ from typing_extensions import Self, override
 
 from noneprompt import Choice, ListPrompt
 
-from operagents.exception import OperaFinished
 from operagents.config import UserDirectorConfig
+from operagents.exception import OperaFinished
 
 from ._base import Director
 

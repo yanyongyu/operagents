@@ -2,8 +2,8 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 from typing_extensions import Self, override
 
-from operagents.utils import resolve_dot_notation
 from operagents.config import FunctionScenePrepareConfig
+from operagents.utils import resolve_dot_notation
 
 from ._base import ScenePrepare
 

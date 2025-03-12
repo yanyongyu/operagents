@@ -1,17 +1,17 @@
-import sys
-import asyncio
 import argparse
+import asyncio
 from pathlib import Path
+import sys
 from typing import Literal
 
-import yaml
 from pydantic import ValidationError
+import yaml
 
-from operagents.opera import Opera
-from operagents.version import VERSION
-from operagents.utils import save_opera_state
 from operagents.config import OperagentsConfig
 from operagents.log import logger, setup_logging
+from operagents.opera import Opera
+from operagents.utils import save_opera_state
+from operagents.version import VERSION
 
 parser = argparse.ArgumentParser(prog="operagents", description="OperAgents CLI")
 parser.add_argument("--version", "-V", action="version", version=VERSION)

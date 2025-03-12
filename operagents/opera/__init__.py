@@ -3,16 +3,16 @@ from typing import TypedDict
 from typing_extensions import Self
 
 from operagents import hook
-from operagents.hook import Hook
-from operagents.log import logger
 from operagents.agent import Agent
-from operagents.scene import Scene
-from operagents.timeline import Timeline
-from operagents.utils import save_opera_state
 from operagents.agent.memory import AgentEvent
 from operagents.config import OperagentsConfig
 from operagents.exception import OperaFinished
+from operagents.hook import Hook
+from operagents.log import logger
+from operagents.scene import Scene
+from operagents.timeline import Timeline
 from operagents.timeline.event import TimelineEvent
+from operagents.utils import save_opera_state
 
 
 class OperaState(TypedDict):

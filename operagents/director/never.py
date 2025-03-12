@@ -1,8 +1,8 @@
 from typing import TYPE_CHECKING
 from typing_extensions import Self, override
 
-from operagents.exception import OperaFinished
 from operagents.config import NeverDirectorConfig
+from operagents.exception import OperaFinished
 
 from ._base import Director
 

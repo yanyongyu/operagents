@@ -1,12 +1,12 @@
 import abc
+from typing import TYPE_CHECKING, Any, ClassVar, Generic
 from typing_extensions import Self, TypeVar
-from typing import TYPE_CHECKING, Any, Generic, ClassVar
 
 from pydantic import BaseModel
 
-from operagents.log import logger
 from operagents.config import PropConfig
 from operagents.exception import OperaFinished
+from operagents.log import logger
 
 if TYPE_CHECKING:
     from operagents.timeline import Timeline
