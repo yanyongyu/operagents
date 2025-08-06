@@ -44,7 +44,7 @@ jobs:
           fetch-depth: 1
 
       - name: Download Schema
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: operagents-config-schema
           path: schemas/
