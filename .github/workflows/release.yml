@@ -34,7 +34,7 @@ jobs:
         uses: ./.github/actions/generate-schema
 
       - name: Upload Config Schema
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: config-schema
           path: operagents/config/config.schema.json
@@ -61,7 +61,7 @@ jobs:
           ref: gh-pages
 
       - name: Download Config Schema
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: config-schema
           path: /tmp/
