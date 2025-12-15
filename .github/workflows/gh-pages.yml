@@ -27,7 +27,7 @@ jobs:
           output-path: operagents/config/config.schema.json
 
       - name: Upload
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: operagents-config-schema
           path: operagents/config/config.schema.json
@@ -44,7 +44,7 @@ jobs:
           fetch-depth: 1
 
       - name: Download Schema
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: operagents-config-schema
           path: schemas/
