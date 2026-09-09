@@ -165,7 +165,10 @@ class CustomBackend(Backend):
     ) -> AsyncGenerator[GenerateResponse | GeneratePropUsage, None]: ...
 
     async def generate(
-        self, timeline: Timeline, messages: list[Message], props: list[Prop] | None = None
+        self,
+        timeline: Timeline,
+        messages: list[Message],
+        props: list[Prop] | None = None,
     ) -> AsyncGenerator[GenerateResponse | GeneratePropUsage, None]:
         yield GenerateResponse(content="")
 ```
@@ -401,6 +404,7 @@ The `Director` of the scene is used to control the next scene to play. You can s
    from operagents.timeline import Timeline
    from operagents.config import CustomDirectorConfig
 
+
    class CustomDirector(Director):
        @classmethod
        def from_config(cls, config: CustomDirectorConfig) -> Self:
@@ -445,6 +449,7 @@ The `prepare` section of the scene is used to defined the preparation steps befo
 
    from operagents.timeline import Timeline
 
+
    async def function_name(timeline: Timeline) -> None:
        pass
    ```
@@ -470,6 +475,7 @@ The `prepare` section of the scene is used to defined the preparation steps befo
    from operagents.timeline import Timeline
    from operagents.scene.prepare import ScenePrepare
    from operagents.config import CustomScenePrepareConfig
+
 
    class CustomScenePrepare(ScenePrepare):
        @classmethod
@@ -506,12 +512,15 @@ The characters in the scene can use props to improve there acting. The `props` s
    from pydantic import Field, BaseModel
    from datetime import datetime, timezone
 
+
    async def current_time() -> str:
        """Get the current real world time."""
        return datetime.now(timezone.utc).astimezone().isoformat()
 
+
    class Args(BaseModel):
        name: str = Field(description="The name")
+
 
    async def greet(args: Args) -> str:
        """Greet the name."""
@@ -543,6 +552,7 @@ The characters in the scene can use props to improve there acting. The `props` s
    from pydantic import BaseModel
    from operagents.prop import Prop
    from operagents.config import CustomPropConfig
+
 
    class CustomProp(Prop):
        """The description of the prop"""
@@ -601,20 +611,17 @@ Hooks enables you to run custom code when specific timeline events occur. The `h
        TimelineEventSessionStart,
    )
 
+
    class CustomHook(Hook):
        @classmethod
        def from_config(cls, config: CustomHookConfig) -> Self:
            return cls()
 
-       async def on_timeline_start(
-           self, timeline: Timeline, event: TimelineEventStart
-       ):
+       async def on_timeline_start(self, timeline: Timeline, event: TimelineEventStart):
            """Called when the timeline is started."""
            pass
 
-       async def on_timeline_end(
-           self, timeline: Timeline, event: TimelineEventEnd
-       ):
+       async def on_timeline_end(self, timeline: Timeline, event: TimelineEventEnd):
            """Called when the timeline is ended."""
            pass
 
